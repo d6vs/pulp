@@ -292,7 +292,6 @@ export default function PurchaseOrdersPage() {
             setCategoryInput={setCategoryInput}
             printInput={printInput}
             setPrintInput={setPrintInput}
-            selectedCategory={selectedCategory}
             setSelectedCategory={handleCategorySelect}
             selectedPrints={selectedPrints}
             onPrintSelect={handlePrintSelect}

@@ -1,9 +1,9 @@
 import fs from "fs";
 import csv from "csv-parser";
 
-export function readCSV(filePath: string): Promise<any[]> {
+export function readCSV(filePath: string): Promise<Record<string, string>[]> {
     return new Promise((resolve, reject) => {
-        const results: any[] = [];
+        const results: Record<string, string>[] = [];
 
         fs.createReadStream(filePath)
             .pipe(csv())

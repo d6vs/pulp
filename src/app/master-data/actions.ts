@@ -180,7 +180,7 @@ export async function getCategoryProductCount(categoryId: string) {
     }
 
     return { count: count || 0, error: null }
-  } catch (error) {
+  } catch {
     return { count: 0, error: "Unable to check product count" }
   }
 }
@@ -373,7 +373,7 @@ export async function getPrintProductCount(printId: string) {
     }
 
     return { count: count || 0, error: null }
-  } catch (error) {
+  } catch {
     return { count: 0, error: "Unable to check product count" }
   }
 }

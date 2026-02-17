@@ -14,7 +14,6 @@ type OrderFormInputsProps = {
   setCategoryInput: (value: string) => void
   printInput: string
   setPrintInput: (value: string) => void
-  selectedCategory: Category | null
   setSelectedCategory: (category: Category | null) => void | Promise<void>
   selectedPrints: Print[]
   onPrintSelect: (print: Print) => void
@@ -33,7 +32,6 @@ export function OrderFormInputs({
   setCategoryInput,
   printInput,
   setPrintInput,
-  selectedCategory,
   setSelectedCategory,
   selectedPrints,
   onPrintSelect,

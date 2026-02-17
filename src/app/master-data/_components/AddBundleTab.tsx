@@ -75,7 +75,7 @@ export function AddBundleTab({
 
   // Bundle reference check state
   const [isCheckingReference, setIsCheckingReference] = useState(false)
-  const [existingBundles, setExistingBundles] = useState<string[]>([])
+  const [, setExistingBundles] = useState<string[]>([])
   const [missingBundles, setMissingBundles] = useState<string[]>([])
   const [hasCheckedReference, setHasCheckedReference] = useState(false)
 

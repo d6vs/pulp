@@ -109,7 +109,7 @@ export function AddSizeTab({ sizes, onSizeAdded }: AddSizeTabProps) {
             <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-3 flex items-center justify-center">
               <Search className="h-8 w-8 text-gray-400" />
             </div>
-            <p className="text-sm text-gray-500">No sizes found matching "{searchQuery}"</p>
+            <p className="text-sm text-gray-500">No sizes found matching &quot;{searchQuery}&quot;</p>
           </div>
         ) : (
           <div className="max-h-[600px] overflow-y-auto p-4">
