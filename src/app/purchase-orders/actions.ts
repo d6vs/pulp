@@ -242,60 +242,41 @@ export async function getPrints() {
 
 export async function getPrintsByCategory(categoryId: string) {
   try {
-    // Get product IDs for this category
-    const { data: products, error: productsError } = await supabaseAdmin
+    // Single query: products → product_prints → prints_name (all joins done by DB)
+    const { data: products, error } = await supabaseAdmin
       .from("products")
-      .select("id")
+      .select("product_prints(prints_name(id, official_print_name, print_code, color))")
       .eq("category_id", categoryId)
-
-    if (productsError) {
-      console.error("Error fetching products:", productsError)
-      return { data: null, error: productsError.message }
-    }
-
-    if (!products || products.length === 0) {
-      return { data: [], error: null }
-    }
-
-    // Batch product IDs into chunks to avoid header overflow
-    // UUIDs are 36 chars each, so 50 * 36 = 1800 chars which is safe for URL limits
-    const productIds = products.map((p) => p.id)
-    const CHUNK_SIZE = 50
-    const allPrintIds = new Set<string>()
-
-    for (let i = 0; i < productIds.length; i += CHUNK_SIZE) {
-      const chunk = productIds.slice(i, i + CHUNK_SIZE)
-      const { data: productPrints, error: ppError } = await supabaseAdmin
-        .from("product_prints")
-        .select("print_id")
-        .in("product_id", chunk)
-
-      if (ppError) {
-        console.error("Error fetching product prints:", ppError)
-        return { data: null, error: ppError.message }
-      }
-
-      productPrints?.forEach((pp) => allPrintIds.add(pp.print_id))
-    }
-
-    if (allPrintIds.size === 0) {
-      return { data: [], error: null }
-    }
-
-    // Fetch the actual print records
-    const uniquePrintIds = [...allPrintIds]
-    const { data, error } = await supabaseAdmin
-      .from("prints_name")
-      .select("*")
-      .in("id", uniquePrintIds)
-      .order("official_print_name")
 
     if (error) {
       console.error("Error fetching prints:", error)
       return { data: null, error: error.message }
     }
 
-    return { data, error: null }
+    if (!products || products.length === 0) {
+      return { data: [], error: null }
+    }
+
+    // Flatten and deduplicate prints across all products
+    type PrintRecord = { id: string; official_print_name: string; print_code: string | null; color: string | null }
+    const printMap = new Map<string, PrintRecord>()
+    for (const product of products) {
+      for (const pp of product.product_prints || []) {
+        const printData = pp.prints_name
+        const prints = Array.isArray(printData) ? printData : printData ? [printData] : []
+        for (const print of prints as PrintRecord[]) {
+          if (print && !printMap.has(print.id)) {
+            printMap.set(print.id, print)
+          }
+        }
+      }
+    }
+
+    const prints = [...printMap.values()].sort((a, b) =>
+      a.official_print_name.localeCompare(b.official_print_name)
+    )
+
+    return { data: prints, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
     return { data: null, error: "Failed to fetch prints by category" }
@@ -353,85 +334,44 @@ export async function getSizesByCategoryAndPrint(categoryId: string, printIds: s
       return { data: [], error: null }
     }
 
-    // Get products that match the category
-    const { data: products, error: productsError } = await supabaseAdmin
+    // Single query: products → sizes + product_prints (all joins done by DB)
+    const { data: products, error } = await supabaseAdmin
       .from("products")
-      .select("id, size_id")
+      .select("size_id, sizes(id, size_name), product_prints(print_id)")
       .eq("category_id", categoryId)
       .not("size_id", "is", null)
 
-    if (productsError) {
-      console.error("Error fetching products:", productsError)
-      return { data: null, error: productsError.message }
+    if (error) {
+      console.error("Error fetching products:", error)
+      return { data: null, error: error.message }
     }
 
     if (!products || products.length === 0) {
       return { data: [], error: null }
     }
 
-    const productIds = products.map((p) => p.id)
+    // Filter products that have ALL selected prints, then collect their sizes
+    type SizeRecord = { id: string; size_name: string }
+    const sizeMap = new Map<string, SizeRecord>()
 
-    // Fetch product_prints in chunks to avoid header overflow
-    // UUIDs are 36 chars each, so 50 * 36 = 1800 chars which is safe for URL limits
-    const CHUNK_SIZE = 50
-    const productPrintsMap = new Map<string, Set<string>>()
-
-    for (let i = 0; i < productIds.length; i += CHUNK_SIZE) {
-      const chunk = productIds.slice(i, i + CHUNK_SIZE)
-      const { data: chunkProductPrints, error: ppError } = await supabaseAdmin
-        .from("product_prints")
-        .select("product_id, print_id")
-        .in("product_id", chunk)
-
-      if (ppError) {
-        console.error("Error fetching product prints:", ppError)
-        return { data: null, error: ppError.message }
-      }
-
-      // Build a map of product_id -> print_ids for fast lookup
-      for (const pp of chunkProductPrints || []) {
-        if (!productPrintsMap.has(pp.product_id)) {
-          productPrintsMap.set(pp.product_id, new Set())
-        }
-        productPrintsMap.get(pp.product_id)!.add(pp.print_id)
-      }
-    }
-
-    // Filter products that have ALL the selected prints
-    const matchingProductSizeIds: string[] = []
     for (const product of products) {
-      const productPrintSet = productPrintsMap.get(product.id)
-      if (!productPrintSet) continue
+      const productPrintIds = new Set((product.product_prints || []).map((pp) => pp.print_id))
+      const hasAllPrints = printIds.every((id) => productPrintIds.has(id))
 
-      // Check if this product has all the selected prints
-      const hasAllPrints = printIds.every((printId) => productPrintSet.has(printId))
-
-      if (hasAllPrints && product.size_id) {
-        matchingProductSizeIds.push(product.size_id)
+      if (hasAllPrints) {
+        const sizeData = product.sizes
+        const sizes = Array.isArray(sizeData) ? sizeData : sizeData ? [sizeData] : []
+        for (const size of sizes as SizeRecord[]) {
+          if (size && !sizeMap.has(size.id)) {
+            sizeMap.set(size.id, size)
+          }
+        }
       }
     }
 
-    const uniqueSizeIds = [...new Set(matchingProductSizeIds)]
+    const sizes = sortSizesByCustomOrder([...sizeMap.values()])
 
-    if (uniqueSizeIds.length === 0) {
-      return { data: [], error: null }
-    }
-
-    // Fetch the actual size records
-    const { data, error } = await supabaseAdmin
-      .from("sizes")
-      .select("*")
-      .in("id", uniqueSizeIds)
-
-    if (error) {
-      console.error("Error fetching sizes:", error)
-      return { data: null, error: error.message }
-    }
-
-    // Sort by custom order
-    const sortedData = data ? sortSizesByCustomOrder(data) : null
-
-    return { data: sortedData, error: null }
+    return { data: sizes, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
     return { data: null, error: "Failed to fetch sizes by category and print" }

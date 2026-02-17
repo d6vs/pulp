@@ -54,7 +54,7 @@ export async function getCategories() {
     return { data, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { data: null, error: "Failed to fetch categories" }
+    return { data: null, error: "Unable to load categories. Please refresh the page." }
   }
 }
 
@@ -107,7 +107,7 @@ export async function createCategory(category: {
     return { data, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { data: null, error: "Failed to create category" }
+    return { data: null, error: "Unable to create category. Please try again." }
   }
 }
 
@@ -163,12 +163,66 @@ export async function updateCategory(id: string, category: {
     return { data, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { data: null, error: "Failed to update category" }
+    return { data: null, error: "Unable to update category. Please try again." }
   }
 }
 
-export async function deleteCategory(id: string) {
+// Check how many products use this category
+export async function getCategoryProductCount(categoryId: string) {
   try {
+    const { count, error } = await supabaseAdmin
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("category_id", categoryId)
+
+    if (error) {
+      return { count: 0, error: error.message }
+    }
+
+    return { count: count || 0, error: null }
+  } catch (error) {
+    return { count: 0, error: "Unable to check product count" }
+  }
+}
+
+export async function deleteCategory(id: string, forceDelete: boolean = false) {
+  try {
+    // Check if any products use this category
+    const { count } = await getCategoryProductCount(id)
+
+    if (count > 0 && !forceDelete) {
+      return {
+        error: null,
+        hasProducts: true,
+        productCount: count,
+        message: `This category is used by ${count} product${count === 1 ? "" : "s"}. You need to delete those products first, or choose "Delete All" to remove everything.`
+      }
+    }
+
+    // If force delete, remove products first
+    if (forceDelete && count > 0) {
+      // First delete product_prints for products in this category
+      const { data: products } = await supabaseAdmin
+        .from("products")
+        .select("id")
+        .eq("category_id", id)
+
+      if (products && products.length > 0) {
+        const productIds = products.map(p => p.id)
+        await supabaseAdmin
+          .from("product_prints")
+          .delete()
+          .in("product_id", productIds)
+
+        // Then delete products
+        await supabaseAdmin
+          .from("products")
+          .delete()
+          .eq("category_id", id)
+      }
+    }
+
+    // Now delete the category
     const { error } = await supabaseAdmin
       .from("product_categories")
       .delete()
@@ -176,13 +230,17 @@ export async function deleteCategory(id: string) {
 
     if (error) {
       console.error("Error deleting category:", error)
-      return { error: error.message }
+      // User-friendly error messages
+      if (error.message.includes("foreign key") || error.message.includes("violates")) {
+        return { error: "Cannot delete this category because it's still being used by some products. Please try again or contact support." }
+      }
+      return { error: "Something went wrong while deleting the category. Please try again." }
     }
 
-    return { error: null }
+    return { error: null, hasProducts: false, productCount: 0 }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { error: "Failed to delete category" }
+    return { error: "Something unexpected happened. Please try again or contact support." }
   }
 }
 
@@ -205,7 +263,7 @@ export async function getPrints() {
     return { data, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { data: null, error: "Failed to fetch prints" }
+    return { data: null, error: "Unable to load prints. Please refresh the page." }
   }
 }
 
@@ -250,7 +308,7 @@ export async function createPrint(print: {
     return { data, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { data: null, error: "Failed to create print" }
+    return { data: null, error: "Unable to create print. Please try again." }
   }
 }
 
@@ -298,12 +356,68 @@ export async function updatePrint(id: string, print: {
     return { data, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { data: null, error: "Failed to update print" }
+    return { data: null, error: "Unable to update print. Please try again." }
   }
 }
 
-export async function deletePrint(id: string) {
+// Check how many products use this print
+export async function getPrintProductCount(printId: string) {
   try {
+    const { count, error } = await supabaseAdmin
+      .from("product_prints")
+      .select("id", { count: "exact", head: true })
+      .eq("print_id", printId)
+
+    if (error) {
+      return { count: 0, error: error.message }
+    }
+
+    return { count: count || 0, error: null }
+  } catch (error) {
+    return { count: 0, error: "Unable to check product count" }
+  }
+}
+
+export async function deletePrint(id: string, forceDelete: boolean = false) {
+  try {
+    // Check if any products use this print
+    const { count } = await getPrintProductCount(id)
+
+    if (count > 0 && !forceDelete) {
+      return {
+        error: null,
+        hasProducts: true,
+        productCount: count,
+        message: `This print is used by ${count} product${count === 1 ? "" : "s"}. You need to delete those products first, or choose "Delete All" to remove everything.`
+      }
+    }
+
+    // If force delete, remove product_prints entries first (and their products)
+    if (forceDelete && count > 0) {
+      // Get products using this print
+      const { data: productPrints } = await supabaseAdmin
+        .from("product_prints")
+        .select("product_id")
+        .eq("print_id", id)
+
+      if (productPrints && productPrints.length > 0) {
+        const productIds = [...new Set(productPrints.map(pp => pp.product_id))]
+
+        // Delete all product_prints for these products
+        await supabaseAdmin
+          .from("product_prints")
+          .delete()
+          .in("product_id", productIds)
+
+        // Delete the products themselves
+        await supabaseAdmin
+          .from("products")
+          .delete()
+          .in("id", productIds)
+      }
+    }
+
+    // Now delete the print
     const { error } = await supabaseAdmin
       .from("prints_name")
       .delete()
@@ -311,13 +425,17 @@ export async function deletePrint(id: string) {
 
     if (error) {
       console.error("Error deleting print:", error)
-      return { error: error.message }
+      // User-friendly error messages
+      if (error.message.includes("foreign key") || error.message.includes("violates")) {
+        return { error: "Cannot delete this print because it's still being used by some products. Please try again or contact support." }
+      }
+      return { error: "Something went wrong while deleting the print. Please try again." }
     }
 
-    return { error: null }
+    return { error: null, hasProducts: false, productCount: 0 }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { error: "Failed to delete print" }
+    return { error: "Something unexpected happened. Please try again or contact support." }
   }
 }
 
@@ -342,7 +460,7 @@ export async function getSizes() {
     return { data: sortedData, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { data: null, error: "Failed to fetch sizes" }
+    return { data: null, error: "Unable to load sizes. Please refresh the page." }
   }
 }
 
@@ -373,7 +491,7 @@ export async function createSize(size: {
     return { data, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { data: null, error: "Failed to create size" }
+    return { data: null, error: "Unable to create size. Please try again." }
   }
 }
 
@@ -454,7 +572,7 @@ export async function createProduct(product: {
     return { data, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { data: null, error: "Failed to create product" }
+    return { data: null, error: "Unable to create product. Please try again." }
   }
 }
 
@@ -473,7 +591,7 @@ export async function getProducts() {
     return { data, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { data: null, error: "Failed to fetch products" }
+    return { data: null, error: "Unable to load products. Please refresh the page." }
   }
 }
 
@@ -495,7 +613,7 @@ export async function getProductWeights() {
     return { data, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { data: null, error: "Failed to fetch product weights" }
+    return { data: null, error: "Unable to load weights. Please refresh the page." }
   }
 }
 
@@ -550,7 +668,7 @@ export async function upsertProductWeight(weightData: {
     }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { data: null, error: "Failed to save product weight" }
+    return { data: null, error: "Unable to save weight. Please try again." }
   }
 }
 
@@ -570,7 +688,7 @@ export async function deleteProductWeight(id: string) {
     return { data, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { data: null, error: "Failed to delete product weight" }
+    return { data: null, error: "Unable to delete weight. Please try again." }
   }
 }
 

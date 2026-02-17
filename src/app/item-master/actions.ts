@@ -121,7 +121,7 @@ export async function generateItemMaster(
     return { successCount, errorCount, results, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { successCount: 0, errorCount: 0, results: [], error: "Failed to generate item master" }
+    return { successCount: 0, errorCount: 0, results: [], error: "Something went wrong while creating items. Please try again." }
   }
 }
 
@@ -147,7 +147,7 @@ export async function getItemMaster(date: string) {
     return { data, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { data: null, error: "Failed to fetch item master" }
+    return { data: null, error: "Unable to load items. Please refresh the page and try again." }
   }
 }
 
@@ -172,6 +172,6 @@ export async function deleteItemMasterByDate(date: string) {
     return { deletedCount: data?.length || 0, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { deletedCount: 0, error: "Failed to delete item master" }
+    return { deletedCount: 0, error: "Unable to delete items. Please try again." }
   }
 }

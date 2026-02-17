@@ -134,7 +134,7 @@ export async function generateBundleItemMaster(
       .single()
 
     if (categoryError || !bundleCategory) {
-      return { successCount: 0, errorCount: 0, results: [], error: "Bundle category not found" }
+      return { successCount: 0, errorCount: 0, results: [], error: "We couldn't find that bundle category. Please make sure it exists in Product Setup." }
     }
 
     const {
@@ -146,7 +146,7 @@ export async function generateBundleItemMaster(
     } = bundleCategory
 
     if (!actualCategoryCode) {
-      return { successCount: 0, errorCount: 0, results: [], error: "Bundle category has no category code" }
+      return { successCount: 0, errorCount: 0, results: [], error: "This bundle category doesn't have a code set up. Please add a category code in Product Setup." }
     }
 
     for (const sizeName of sizeNames) {
@@ -373,7 +373,7 @@ export async function generateBundleItemMaster(
     return { successCount, errorCount, createdCount, existedCount, addedToMasterCount, results, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { successCount: 0, errorCount: 0, createdCount: 0, existedCount: 0, addedToMasterCount: 0, results: [], error: "Failed to generate bundle item master" }
+    return { successCount: 0, errorCount: 0, createdCount: 0, existedCount: 0, addedToMasterCount: 0, results: [], error: "Something went wrong while creating the bundle. Please try again." }
   }
 }
 
@@ -403,7 +403,7 @@ export async function getBundleItemMaster(date?: string) {
     return { data, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { data: null, error: "Failed to fetch bundle item master" }
+    return { data: null, error: "Unable to load bundle items. Please refresh the page and try again." }
   }
 }
 
@@ -445,7 +445,7 @@ export async function deleteBundleItemMasterByDate(date: string) {
     }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { deletedCount: 0, error: "Failed to delete bundle item master" }
+    return { deletedCount: 0, error: "Unable to delete items. Please try again." }
   }
 }
 
@@ -568,7 +568,7 @@ export async function addBundlesToItemMasterFromReference(
     return { successCount, errorCount, addedToMasterCount: successCount, results, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { successCount: 0, errorCount: 0, addedToMasterCount: 0, results: [], error: "Failed to add bundle to item master" }
+    return { successCount: 0, errorCount: 0, addedToMasterCount: 0, results: [], error: "Something went wrong while adding items. Please try again." }
   }
 }
 
@@ -707,6 +707,6 @@ export async function checkBundleExistsInReference(
     }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { exists: false, existingBundles: [], missingBundles: [], error: "Failed to check bundle reference" }
+    return { exists: false, existingBundles: [], missingBundles: [], error: "Unable to check if this bundle exists. Please try again." }
   }
 }

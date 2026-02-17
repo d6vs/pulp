@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import { Plus, Package, Search, Pencil, Trash2, Check, X } from "lucide-react"
-import { createCategory, updateCategory, deleteCategory } from "../actions"
+import { createCategory, updateCategory, deleteCategory, getCategoryProductCount } from "../actions"
 import { SearchableList } from "@/components/ui/searchable-list"
 
 type Category = {
@@ -82,6 +82,8 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
   // Delete state
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteProductCount, setDeleteProductCount] = useState<number>(0)
+  const [isCheckingDelete, setIsCheckingDelete] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -173,26 +175,48 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
     }
   }
 
-  const handleDelete = async () => {
+  const handleDeleteClick = async (category: Category) => {
+    setIsCheckingDelete(true)
+    setDeleteTarget(category)
+
+    // Check how many products use this category
+    const { count } = await getCategoryProductCount(category.id)
+    setDeleteProductCount(count)
+    setIsCheckingDelete(false)
+  }
+
+  const handleDelete = async (forceDelete: boolean = false) => {
     if (!deleteTarget) return
 
     setIsDeleting(true)
     try {
-      const result = await deleteCategory(deleteTarget.id)
+      const result = await deleteCategory(deleteTarget.id, forceDelete)
 
       if (result.error) {
-        toast.error(`Failed to delete: ${result.error}`)
+        toast.error(result.error)
+      } else if (result.hasProducts && !forceDelete) {
+        // This shouldn't happen since we pre-check, but handle it just in case
+        toast.error(result.message || "This category has products. Please delete them first.")
       } else {
-        toast.success("Category deleted successfully!")
+        const message = forceDelete && deleteProductCount > 0
+          ? `Category and ${deleteProductCount} product${deleteProductCount === 1 ? "" : "s"} deleted successfully!`
+          : "Category deleted successfully!"
+        toast.success(message)
         onCategoryAdded()
+        setDeleteTarget(null)
+        setDeleteProductCount(0)
       }
     } catch (error) {
       console.error("Error:", error)
-      toast.error("An unexpected error occurred")
+      toast.error("Something unexpected happened. Please try again.")
     } finally {
       setIsDeleting(false)
-      setDeleteTarget(null)
     }
+  }
+
+  const cancelDelete = () => {
+    setDeleteTarget(null)
+    setDeleteProductCount(0)
   }
 
   const filteredCategories = categories.filter((category) => {
@@ -459,7 +483,7 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                       <button
-                        onClick={() => setDeleteTarget(category)}
+                        onClick={() => handleDeleteClick(category)}
                         className="p-1.5 rounded-md hover:bg-gray-100 text-gray-400 hover:text-red-600 transition-colors"
                         title="Delete"
                       >
@@ -475,23 +499,56 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
       </SearchableList>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+      <AlertDialog open={!!deleteTarget} onOpenChange={cancelDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Category</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete &quot;{deleteTarget?.category_name}&quot;? This may fail if products reference this category.
+            <AlertDialogTitle>
+              {isCheckingDelete ? "Checking..." : deleteProductCount > 0 ? "Category Has Products" : "Delete Category"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                {isCheckingDelete ? (
+                  <p>Please wait while we check if this category is being used...</p>
+                ) : deleteProductCount > 0 ? (
+                  <>
+                    <p>
+                      <strong>&quot;{deleteTarget?.category_name}&quot;</strong> is currently used by{" "}
+                      <strong className="text-red-600">{deleteProductCount} product{deleteProductCount === 1 ? "" : "s"}</strong>.
+                    </p>
+                    <p>You have two options:</p>
+                    <ul className="list-disc list-inside text-sm space-y-1 text-gray-600">
+                      <li><strong>Delete All</strong> — Remove all {deleteProductCount} products and the category</li>
+                      <li><strong>Cancel</strong> — Go back and manually review/delete products first</li>
+                    </ul>
+                    <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-sm text-amber-800">
+                      ⚠️ Deleting products cannot be undone. Make sure you don&apos;t need these products anymore.
+                    </div>
+                  </>
+                ) : (
+                  <p>Are you sure you want to delete &quot;{deleteTarget?.category_name}&quot;? This action cannot be undone.</p>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
+            <AlertDialogCancel disabled={isDeleting || isCheckingDelete}>Cancel</AlertDialogCancel>
+            {!isCheckingDelete && deleteProductCount > 0 ? (
+              <AlertDialogAction
+                onClick={() => handleDelete(true)}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isDeleting ? "Deleting..." : `Delete All (${deleteProductCount + 1} items)`}
+              </AlertDialogAction>
+            ) : !isCheckingDelete ? (
+              <AlertDialogAction
+                onClick={() => handleDelete(false)}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            ) : null}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
