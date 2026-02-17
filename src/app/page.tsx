@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ShoppingCart, Boxes, Package } from "lucide-react"
+import { ShoppingCart, Boxes, Package, LayoutList } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 const sections = [
@@ -16,6 +16,12 @@ const sections = [
     icon: Boxes,
   },
   {
+    title: "Bundle Item Master",
+    description: "Generate bundle item master data by selecting bundle category and individual products. Add to daily processing.",
+    href: "/bundle-item-master",
+    icon: LayoutList,
+  },
+  {
     title: "Product Setup",
     description: "Manage prints, categories, sizes, weights, and products. Configure SKU schemas and product details.",
     href: "/master-data",
@@ -28,7 +34,7 @@ export default function Home() {
     <div className="min-h-[calc(100vh-5rem)]  flex flex-col items-center justify-center p-6">
       <div className="max-w-4xl w-full space-y-8">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-gray-900">Reports Pro</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Pulp</h1>
           <p className="text-gray-500">Inventory management and reporting system</p>
         </div>
 

@@ -31,6 +31,7 @@ async function findProductByCategoryAndSizeName(
 ): Promise<{
   product: {
     id: string
+    product_code: string | null
     cost_price: number | null
     mrp: number | null
     base_price: number | null
@@ -56,7 +57,7 @@ async function findProductByCategoryAndSizeName(
 
   const { data: products, error: productsError } = await supabaseAdmin
     .from("products")
-    .select("id, cost_price, mrp, base_price, length_mm, width_mm, height_mm, brand, size_id")
+    .select("id, product_code, cost_price, mrp, base_price, length_mm, width_mm, height_mm, brand, size_id")
     .eq("category_id", categoryId)
     .eq("size_id", sizeId)
 
@@ -74,6 +75,7 @@ async function findProductByCategoryAndSizeName(
       return {
         product: {
           id: prod.id,
+          product_code: prod.product_code ?? null,
           cost_price: prod.cost_price,
           mrp: prod.mrp,
           base_price: prod.base_price,
@@ -148,8 +150,6 @@ export async function generateBundleItemMaster(
     }
 
     for (const sizeName of sizeNames) {
-      const bundleSKU = generateSKU(skuSchema, actualCategoryCode, uniquePrintCodes, sizeName)
-
       // Get size_id for weight lookup
       const { data: bundleSizeData } = await supabaseAdmin
         .from("sizes")
@@ -171,9 +171,8 @@ export async function generateBundleItemMaster(
       let totalCostPrice = 0
       let totalMRP = 0
       let totalBasePrice = 0
-      let totalWeight = 0
       const componentProducts: {
-        sku: string
+        sku: string        // actual product_code from products table (or generated as fallback)
         mrp: number
         printName: string // internal_style_name
         productData: {
@@ -196,15 +195,18 @@ export async function generateBundleItemMaster(
           .eq("id", indProduct.categoryId)
           .single()
 
-        const indSkuSchema = indCategory?.sku_schema || 0
-        const indSKU = generateSKU(indSkuSchema, indProduct.categoryCode, [indProduct.printCode], sizeName)
-
         // Find the individual product with latest prices
-        const { product: foundProduct, sizeId: productSizeId } = await findProductByCategoryAndSizeName(
+        const { product: foundProduct } = await findProductByCategoryAndSizeName(
           indProduct.categoryId,
           sizeName,
           indProduct.printId
         )
+
+        // Use product_code from products table as component_product_code
+        // Fall back to generating SKU from category's sku_schema if not set
+        const indSkuSchema = indCategory?.sku_schema || 0
+        const indSKU = foundProduct?.product_code
+          || generateSKU(indSkuSchema, indProduct.categoryCode, [indProduct.printCode], sizeName)
 
         let productCostPrice = 0
         let productMRP = 0
@@ -214,18 +216,11 @@ export async function generateBundleItemMaster(
           productCostPrice = foundProduct.cost_price || 0
           productMRP = foundProduct.mrp || 0
 
-          const { data: prodWeight } = await supabaseAdmin
-            .from("product_weights")
-            .select("weight")
-            .eq("category_id", indProduct.categoryId)
-            .eq("size_id", productSizeId)
-            .maybeSingle()
-
           foundProductData = {
             length_mm: foundProduct.length_mm || null,
             width_mm: foundProduct.width_mm || null,
             height_mm: foundProduct.height_mm || null,
-            weight_gms: prodWeight?.weight || null,
+            weight_gms: null,
             brand: foundProduct.brand || null,
             hsn_code: indCategory?.hsn_code || null,
             base_price: foundProduct.base_price || null,
@@ -238,8 +233,42 @@ export async function generateBundleItemMaster(
         totalCostPrice += productCostPrice * quantity
         totalMRP += productMRP * quantity
         totalBasePrice += (foundProduct?.base_price || productMRP) * quantity
-        totalWeight += (foundProductData?.weight_gms || 0) * quantity
         componentProducts.push({ sku: indSKU, mrp: productMRP, printName: indProduct.printName, productData: foundProductData })
+      }
+
+      // --- Find existing bundle SKU in reference (order-independent) ---
+      // Check if a bundle with ALL these print codes already exists in bundle_reference
+      let bundleSKU: string | null = null
+
+      let existingQuery = supabaseAdmin
+        .from("bundle_reference")
+        .select("product_code")
+        .eq("category_code", bundleCategoryCode)
+        .eq("size", sizeName)
+
+      for (const code of uniquePrintCodes) {
+        existingQuery = existingQuery.ilike("product_code", `%${code}%`)
+      }
+
+      const { data: existingEntries } = await existingQuery
+
+      if (existingEntries && existingEntries.length > 0) {
+        // Group by product_code and find one where component count matches
+        const countMap = new Map<string, number>()
+        for (const e of existingEntries) {
+          countMap.set(e.product_code, (countMap.get(e.product_code) || 0) + 1)
+        }
+        for (const [code, count] of countMap) {
+          if (count === individualProducts.length) {
+            bundleSKU = code
+            break
+          }
+        }
+      }
+
+      // If no existing bundle found, generate a new SKU
+      if (!bundleSKU) {
+        bundleSKU = generateSKU(skuSchema, actualCategoryCode, uniquePrintCodes, sizeName)
       }
 
       // Generate product name
@@ -253,7 +282,7 @@ export async function generateBundleItemMaster(
 
       // Process each component
       for (const component of componentProducts) {
-        // Check if bundle exists in reference table
+        // Check if this specific component row exists in reference table
         const { data: referenceData } = await supabaseAdmin
           .from("bundle_reference")
           .select("*")
@@ -271,7 +300,7 @@ export async function generateBundleItemMaster(
           length_mm: referenceData?.length_mm || prodData?.length_mm || FIXED_DEFAULTS.length_mm,
           width_mm: referenceData?.width_mm || prodData?.width_mm || FIXED_DEFAULTS.width_mm,
           height_mm: referenceData?.height_mm || prodData?.height_mm || FIXED_DEFAULTS.height_mm,
-          weight_gms: referenceData?.weight_gms || totalWeight || weightData?.weight || null,
+          weight_gms: weightData?.weight || referenceData?.weight_gms || null,
           brand: referenceData?.brand || prodData?.brand || FIXED_DEFAULTS.brand,
           size: referenceData?.size || sizeName,
           hsn_code: referenceData?.hsn_code || prodData?.hsn_code || hsnCode || null,
@@ -433,7 +462,8 @@ export async function addBundlesToItemMasterFromReference(
     printCode: string
     printName: string
     quantity?: number
-  }[]
+  }[],
+  bundleCategoryId: string
 ) {
   try {
     const results: { productCode: string; error: string | null }[] = []
@@ -444,31 +474,38 @@ export async function addBundlesToItemMasterFromReference(
       let totalCostPrice = 0
       let totalMRP = 0
       let totalBasePrice = 0
-      let totalWeight = 0
 
       // Fetch latest prices for each component
       for (const indProduct of individualProducts) {
-        const { product: foundProduct, sizeId: productSizeId } = await findProductByCategoryAndSizeName(
+        const { product: foundProduct } = await findProductByCategoryAndSizeName(
           indProduct.categoryId,
           bundle.sizeName,
           indProduct.printId
         )
 
         if (foundProduct) {
-          const { data: prodWeight } = await supabaseAdmin
-            .from("product_weights")
-            .select("weight")
-            .eq("category_id", indProduct.categoryId)
-            .eq("size_id", productSizeId)
-            .maybeSingle()
-
           const quantity = indProduct.quantity || 1
           totalCostPrice += (foundProduct.cost_price || 0) * quantity
           totalMRP += (foundProduct.mrp || 0) * quantity
           totalBasePrice += (foundProduct.base_price || foundProduct.mrp || 0) * quantity
-          totalWeight += (prodWeight?.weight || 0) * quantity
         }
       }
+
+      // Fetch bundle weight from product_weights using bundle category + size
+      const { data: bundleSizeData } = await supabaseAdmin
+        .from("sizes")
+        .select("id")
+        .eq("size_name", bundle.sizeName)
+        .single()
+
+      const { data: bundleWeightData } = await supabaseAdmin
+        .from("product_weights")
+        .select("weight")
+        .eq("category_id", bundleCategoryId)
+        .eq("size_id", bundleSizeData?.id)
+        .maybeSingle()
+
+      const bundleWeight = bundleWeightData?.weight || null
 
       // Insert each component from reference data
       for (const component of bundle.components) {
@@ -499,7 +536,7 @@ export async function addBundlesToItemMasterFromReference(
           length_mm: component.length_mm,
           width_mm: component.width_mm,
           height_mm: component.height_mm,
-          weight_gms: totalWeight || component.weight_gms,
+          weight_gms: bundleWeight || component.weight_gms,
           brand: component.brand,
           size: component.size,
           hsn_code: component.hsn_code,

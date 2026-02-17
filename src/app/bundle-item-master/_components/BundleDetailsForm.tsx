@@ -267,15 +267,6 @@ export function BundleDetailsForm({
       return
     }
 
-    // Filter existingBundles to only include selected sizes
-    const selectedSizeNames = selectedFinalSizes.map((s) => s.size_name)
-    const bundlesToAdd = existingBundles.filter((b) => selectedSizeNames.includes(b.sizeName))
-
-    if (bundlesToAdd.length === 0) {
-      toast.error("No bundle data found for selected sizes. Please check bundle reference first.")
-      return
-    }
-
     setIsSubmitting(true)
     try {
       // Build individual products array with all required details
@@ -287,8 +278,40 @@ export function BundleDetailsForm({
         printName: p.print!.official_print_name,
       }))
 
+      const selectedSizeNames = selectedFinalSizes.map((s) => s.size_name)
+
+      // Auto-check reference if user skipped the check button
+      let bundlesToAdd = existingBundles.filter((b) => selectedSizeNames.includes(b.sizeName))
+
+      if (bundlesToAdd.length === 0) {
+        const checkProducts = productsWithPrints.map((p) => ({
+          categoryName: p.category!.category_name,
+          categoryCode: p.category!.category_code || "",
+          printName: p.print!.official_print_name,
+          printCode: p.print!.print_code || "",
+        }))
+
+        const checkResult = await checkBundleExistsInReference(
+          selectedBundleCategory.category_name,
+          checkProducts,
+          selectedSizeNames
+        )
+
+        if (!checkResult.exists || checkResult.existingBundles.length === 0) {
+          const missing = checkResult.missingBundles?.join(", ") || "unknown"
+          toast.error(`Bundle not found in reference: ${missing}. Create it first in Product Setup.`)
+          setIsSubmitting(false)
+          return
+        }
+
+        bundlesToAdd = checkResult.existingBundles
+        // Update state so UI reflects the check result
+        setBundleExistsInReference(true)
+        setExistingBundles(checkResult.existingBundles)
+      }
+
       // Use existing reference data directly - no SKU regeneration needed!
-      const result = await addBundlesToItemMasterFromReference(bundlesToAdd, individualProducts)
+      const result = await addBundlesToItemMasterFromReference(bundlesToAdd, individualProducts, selectedBundleCategory.id)
 
       if (result.error) {
         toast.error(result.error)
