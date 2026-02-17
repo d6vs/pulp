@@ -70,9 +70,14 @@ export function useRealtimeSubscription({
           UPDATE: toastMessages.update || `${table} record updated`,
           DELETE: toastMessages.delete || `${table} record deleted`,
         }
-        toast.info(messages[event], {
+        toast(messages[event], {
           description: "The list has been refreshed.",
           duration: 3000,
+          style: {
+            background: "#FFF7ED",
+            border: "1px solid #FB923C",
+            color: "#C2410C",
+          },
         })
       }
     },
@@ -80,6 +85,8 @@ export function useRealtimeSubscription({
   )
 
   useEffect(() => {
+    console.log(`[Realtime] Subscribing to ${table}...`)
+
     const channel = supabaseClient
       .channel(`${table}-changes`)
       .on(
@@ -90,12 +97,21 @@ export function useRealtimeSubscription({
           table,
         },
         (payload) => {
+          console.log(`[Realtime] Event received on ${table}:`, payload.eventType)
           handleChange(payload.eventType as RealtimeEvent, payload.new as Record<string, unknown>)
         }
       )
-      .subscribe()
+      .subscribe((status) => {
+        console.log(`[Realtime] ${table} subscription status:`, status)
+        if (status === "SUBSCRIBED") {
+          console.log(`[Realtime] Successfully subscribed to ${table}`)
+        } else if (status === "CHANNEL_ERROR") {
+          console.error(`[Realtime] Error subscribing to ${table}`)
+        }
+      })
 
     return () => {
+      console.log(`[Realtime] Unsubscribing from ${table}`)
       supabaseClient.removeChannel(channel)
     }
   }, [table, schema, handleChange])
