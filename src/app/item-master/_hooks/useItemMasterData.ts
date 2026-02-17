@@ -58,16 +58,10 @@ export function useItemMasterData() {
     }
   }, [selectedDate])
 
-  // Real-time subscription: auto-refresh when another user adds/updates/deletes items
+  // Real-time subscription: auto-refresh when data changes
   useRealtimeSubscription({
     table: "item_master",
     onAnyChange: refetchItemMaster,
-    showToasts: true,
-    toastMessages: {
-      insert: "New item added by another user",
-      update: "Item updated by another user",
-      delete: "Item deleted by another user",
-    },
   })
 
   // Refresh when user returns to this tab

@@ -74,12 +74,6 @@ export function usePurchaseOrderData() {
   useRealtimeSubscription({
     table: "purchase_orders",
     onAnyChange: refetchPurchaseOrders,
-    showToasts: true,
-    toastMessages: {
-      insert: "New order added by another user",
-      update: "Order updated by another user",
-      delete: "Order deleted by another user",
-    },
   })
 
   // Also listen for master data changes

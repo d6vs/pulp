@@ -120,16 +120,10 @@ export function useBundleItemMasterData() {
     }
   }, [selectedDate])
 
-  // Real-time subscription: auto-refresh when another user adds/updates/deletes
+  // Real-time subscription: auto-refresh when data changes
   useRealtimeSubscription({
     table: "bundle_item_master",
     onAnyChange: refetchBundleItemMaster,
-    showToasts: true,
-    toastMessages: {
-      insert: "New bundle added by another user",
-      update: "Bundle data was updated",
-      delete: "A bundle was removed",
-    },
   })
 
   // Also refresh when user returns to this tab
