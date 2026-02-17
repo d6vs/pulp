@@ -1,14 +1,29 @@
 "use client"
 
 import { useEffect, useCallback } from "react"
-import { createClient } from "@supabase/supabase-js"
+import { createClient, SupabaseClient } from "@supabase/supabase-js"
 import { toast } from "sonner"
 
-// Create a client-side Supabase client for realtime
-const supabaseClient = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+// Lazy singleton - only create client when actually needed (at runtime, not build time)
+let supabaseClient: SupabaseClient | null = null
+
+function getSupabaseClient(): SupabaseClient | null {
+  if (typeof window === "undefined") return null
+
+  if (!supabaseClient) {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!url || !key) {
+      console.warn("[Realtime] Supabase credentials not configured")
+      return null
+    }
+
+    supabaseClient = createClient(url, key)
+  }
+
+  return supabaseClient
+}
 
 type RealtimeEvent = "INSERT" | "UPDATE" | "DELETE"
 
@@ -85,9 +100,15 @@ export function useRealtimeSubscription({
   )
 
   useEffect(() => {
+    const client = getSupabaseClient()
+    if (!client) {
+      console.warn(`[Realtime] Supabase client not available, skipping subscription to ${table}`)
+      return
+    }
+
     console.log(`[Realtime] Subscribing to ${table}...`)
 
-    const channel = supabaseClient
+    const channel = client
       .channel(`${table}-changes`)
       .on(
         "postgres_changes",
@@ -112,7 +133,7 @@ export function useRealtimeSubscription({
 
     return () => {
       console.log(`[Realtime] Unsubscribing from ${table}`)
-      supabaseClient.removeChannel(channel)
+      client.removeChannel(channel)
     }
   }, [table, schema, handleChange])
 }
