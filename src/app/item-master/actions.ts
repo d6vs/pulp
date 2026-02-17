@@ -1,0 +1,177 @@
+"use server"
+
+import { supabaseAdmin } from "@/lib/supabase/supabaseAdmin"
+
+// Fixed defaults for item master
+const FIXED_DEFAULTS = {
+  length_mm: 210,
+  width_mm: 180,
+  height_mm: 20,
+  isbn: "1",
+  brand: "Orange Sugars",
+}
+
+export async function generateItemMaster(
+  categoryId: string,
+  categoryName: string,
+  printId: string,
+  printName: string,
+  sizeIds: string[]
+) {
+  try {
+    const results: { productCode: string; error: string | null }[] = []
+
+    for (const sizeId of sizeIds) {
+      // Find the product matching category + print + size
+      const { data: products, error: productsError } = await supabaseAdmin
+        .from("products")
+        .select("id, product_code, name, color, hsn_code, cost_price, base_price, mrp, material")
+        .eq("category_id", categoryId)
+        .eq("size_id", sizeId)
+
+      if (productsError) {
+        console.error(`[ItemMaster] DB error for category=${categoryId}, size=${sizeId}:`, productsError.message)
+        results.push({ productCode: "", error: productsError.message })
+        continue
+      }
+
+      if (!products || products.length === 0) {
+        console.error(`[ItemMaster] No products found for category=${categoryId}, size=${sizeId}`)
+        results.push({ productCode: "", error: `No product found for this category/size combination` })
+        continue
+      }
+
+      console.log(`[ItemMaster] Found ${products.length} product(s) for category=${categoryId}, size=${sizeId}. Looking for print=${printId}`)
+
+      // Find the product that has the matching print
+      let matchedProduct = null
+      for (const product of products) {
+        const { data: productPrints } = await supabaseAdmin
+          .from("product_prints")
+          .select("print_id")
+          .eq("product_id", product.id)
+
+        console.log(`[ItemMaster] Product ${product.id} (${product.product_code}) has prints:`, productPrints?.map((pp) => pp.print_id))
+
+        const hasPrint = productPrints?.some((pp) => pp.print_id === printId)
+        if (hasPrint) {
+          matchedProduct = product
+          break
+        }
+      }
+
+      if (!matchedProduct) {
+        console.error(`[ItemMaster] No product matched print=${printId} among ${products.length} product(s)`)
+        results.push({ productCode: "", error: `No product found matching this print` })
+        continue
+      }
+
+      // Get size name
+      const { data: sizeData } = await supabaseAdmin
+        .from("sizes")
+        .select("size_name")
+        .eq("id", sizeId)
+        .single()
+
+      // Get weight
+      const { data: weightData } = await supabaseAdmin
+        .from("product_weights")
+        .select("weight")
+        .eq("category_id", categoryId)
+        .eq("size_id", sizeId)
+        .maybeSingle()
+
+      // Insert into item_master
+      const { error: insertError } = await supabaseAdmin
+        .from("item_master")
+        .upsert(
+          {
+            category_code: categoryName,
+            product_code: matchedProduct.product_code,
+            name: matchedProduct.name,
+            color: matchedProduct.color || null,
+            size: sizeData?.size_name || null,
+            weight_gms: weightData?.weight || null,
+            hsn_code: matchedProduct.hsn_code || null,
+            cost_price: matchedProduct.cost_price || null,
+            base_price: matchedProduct.base_price || null,
+            mrp: matchedProduct.mrp || null,
+            material: matchedProduct.material || null,
+            style: printName,
+            length_mm: FIXED_DEFAULTS.length_mm,
+            width_mm: FIXED_DEFAULTS.width_mm,
+            height_mm: FIXED_DEFAULTS.height_mm,
+            isbn: FIXED_DEFAULTS.isbn,
+            brand: FIXED_DEFAULTS.brand,
+            product_id: matchedProduct.id,
+          },
+          { onConflict: "product_code" }
+        )
+
+      if (insertError) {
+        results.push({ productCode: matchedProduct.product_code, error: insertError.message })
+      } else {
+        results.push({ productCode: matchedProduct.product_code, error: null })
+      }
+    }
+
+    const successCount = results.filter((r) => !r.error).length
+    const errorCount = results.filter((r) => r.error).length
+
+    return { successCount, errorCount, results, error: null }
+  } catch (error) {
+    console.error("Unexpected error:", error)
+    return { successCount: 0, errorCount: 0, results: [], error: "Failed to generate item master" }
+  }
+}
+
+export async function getItemMaster(date: string) {
+  try {
+    // Convert IST boundaries to UTC for querying
+    // IST is UTC+05:30, so midnight IST = previous day 18:30 UTC
+    const istStart = new Date(`${date}T00:00:00.000+05:30`)
+    const istEnd = new Date(istStart.getTime() + 24 * 60 * 60 * 1000)
+
+    const { data, error } = await supabaseAdmin
+      .from("item_master")
+      .select("*")
+      .gte("created_at", istStart.toISOString())
+      .lt("created_at", istEnd.toISOString())
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      console.error("Error fetching item master:", error)
+      return { data: null, error: error.message }
+    }
+    console.log(`Fetched ${data.length} item master records for date=${date}`)
+    return { data, error: null }
+  } catch (error) {
+    console.error("Unexpected error:", error)
+    return { data: null, error: "Failed to fetch item master" }
+  }
+}
+
+export async function deleteItemMasterByDate(date: string) {
+  try {
+    // Convert IST boundaries to UTC for querying
+    const istStart = new Date(`${date}T00:00:00.000+05:30`)
+    const istEnd = new Date(istStart.getTime() + 24 * 60 * 60 * 1000)
+
+    const { data, error } = await supabaseAdmin
+      .from("item_master")
+      .delete()
+      .gte("created_at", istStart.toISOString())
+      .lt("created_at", istEnd.toISOString())
+      .select()
+
+    if (error) {
+      console.error("Error deleting item master:", error)
+      return { deletedCount: 0, error: error.message }
+    }
+
+    return { deletedCount: data?.length || 0, error: null }
+  } catch (error) {
+    console.error("Unexpected error:", error)
+    return { deletedCount: 0, error: "Failed to delete item master" }
+  }
+}

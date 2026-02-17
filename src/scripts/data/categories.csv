@@ -1,0 +1,103 @@
+Category Name,Category Code,Schema Type,HSN,Category Type,Product Name - Conditions 1,Product Name - Condition 2,Product Name Condition 3
+12 Pack Cotton Bib,12_BIB,Type 5,61112000,Bundle,12 Pack BIB |,{{Print Name seperated by commas for how many ever Prints are there}},
+12 Pack Muslin Langoti,12_MLG,Type 5,63013000,Bundle,12 Pack Muslin Langoti |,{{Print Name seperated by commas for how many ever Prints are there}},
+12 Pack Muslin Napkin,12_MNK,Type 5,63013000,Bundle,12 Pack Muslin Napkin |,{{Print Name seperated by commas for how many ever Prints are there}},
+12 Pack Muslin Wash Cloth,12_MWC,Type 5,63013000,Bundle,12 Pack Muslin Wash Cloth |,{{Print Name seperated by commas for how many ever Prints are there}},
+6 Pack Cotton Bib,6_BIB,Type 5,61112000,Bundle,6 Pack BIB |,{{Print Name seperated by commas for how many ever Prints are there}},
+6 Pack Muslin Langoti,6_MLG,Type 5,63013000,Bundle,6 Pack Muslin Langoti |,{{Print Name seperated by commas for how many ever Prints are there}},
+6 Pack Muslin Napkin,6_MNK,Type 5,63013000,Bundle,6 Pack Muslin Napkin |,{{Print Name seperated by commas for how many ever Prints are there}},
+6 Pack Muslin Swaddle,6_MSD,Type 5,63013000,Bundle,6 Pack Muslin Swaddle |,{{Print Name seperated by commas for how many ever Prints are there}},
+6 Pack Muslin Wash Cloth,6_MWC,Type 5,63013000,Bundle,6 Pack Muslin Wash Cloth |,{{Print Name seperated by commas for how many ever Prints are there}},
+2 Pack Cotton Bib,BIB,Type 6,61112000,Individual,Cotton Bib |,{{Print Name seperated by commas for how many ever Prints are there}},
+Muslin Gift Box,BJGB,Type 2,63013000,Bundle,Bundle of Joy Gift Box |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Bodysuit,BS,Type 1,61112000,Individual,Half Sleeves Bodysuit |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+3 Pack Half Sleeves Bodysuit,BS,Type 3,61112000,Bundle,3 Pcs Half Sleeves Bodysuit |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+2 Pack Half Sleeves Bodysuit,BS,Type 3,61112000,Bundle,2 Pcs Half Sleeves Bodysuit |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+3 Pack HS Bodysuit,BS,Type 3,61112000,Bundle,3 Pcs Half Sleeves Bodysuit |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Bodysuit & Pant,BS_P,Type 0,61112000,Bundle,Bodysuit & Pant |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Bodysuit & Short,BS_S,Type 0,61112000,Bundle,Bodysuit & Short |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+8 Pack Cotton Joggers,CJ,Type 3,61112000,Bundle,8 Pcs Cotton Joggers |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Cotton Joggers,CJ,Type 1,61112000,Individual,Cotton Joggers |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+2 Pack Cotton Joggers,CJ,Type 3,61112000,Bundle,2 Pcs Cotton Joggers |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+4 Pack Cotton Joggers,CJ,Type 3,61112000,Bundle,4 Pcs Cotton Joggers |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+3 Pack Cotton Joggers,CJ,Type 3,61112000,Bundle,3 Pcs Cotton Joggers |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+5 Pack Cotton Joggers,CJ,Type 3,61112000,Bundle,5 Pcs Cotton Joggers |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Jogger & 3 T-Shirts,CJ_T,Type 3,61112000,Bundle,Cotton Joggers & 3 Pack Half Sleeves T-shirt Set |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Linen Shirt & Short,CLS_S,Type 1,61112000,Individual,Cotton Linen Shirt & Short |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+2 Pack Cotton Shorts,CS,Type 3,61112000,Bundle,2 Pcs Cotton Shorts |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+3 Pack Cotton Shorts,CS,Type 3,61112000,Bundle,3 Pcs Cotton Shorts |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Cotton Shorts,CS,Type 3,61112000,Individual,Cotton Shorts |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+4 Pack Cotton Shorts,CS,Type 3,61112000,Bundle,4 Pcs Cotton Shorts |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+5 Pack Cotton Shorts,CS,Type 3,61112000,Bundle,5 Pcs Cotton Shorts |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Dress,DS,Type 1,61112000,Individual,Long Sleeves Printed Dress |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Full Sleeves Bodysuit,FBS,Type 1,61112000,Individual,Full Sleeves Bodysuit |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+3 Pack Full Sleeves Bodysuit,FBS,Type 3,61112000,Bundle,3 Pcs Full Sleeves Bodysuit |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+2 Pack Full Sleeves Bodysuit,FBS,Type 3,61112000,Bundle,2 Pcs Full Sleeves Bodysuit |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+3 Pack FS Bodysuit,FBS,Type 3,61112000,Bundle,3 Pcs Full Sleeves Bodysuit |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Full Sleeves T-Shirt,FT,Type 0,61112000,Individual,Full Sleeves T-Shirt |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+5 Pack FS T-Shirt,FT,Type 3,61112000,Bundle,5 Pack Full Sleeves Unisex T-Shirts |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+4 Pack FS T-Shirt,FT,Type 3,61112000,Bundle,4 Pack Full Sleeves Unisex T-Shirts |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+8 Pack FS T-Shirt,FT,Type 3,61112000,Bundle,8 Pack Full Sleeves Unisex T-Shirts |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+6 Pack Full Sleeves T-Shirt & Pant,FT_P,Type 3,61112000,Bundle,3 Pack Full Sleeves Unisex Co-ord Set |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+8 Pack Full Sleeves T-Shirt & Pant,FT_P,Type 3,61112000,Bundle,4 Pack Full Sleeves Unisex Co-ord Set |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+FS T-Shirt & Pant,FT_P,Type 1,61112000,Individual,Full Sleeves Unisex Co-ord Set |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Full Sleeves T-Shirt & Pant,FT_P,Type 1,61112000,Individual,Full Sleeves Unisex Co-ord Set |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+2 Pack Interlock Joggers,ICJ,Type 3,61112000,Bundle,2 Pcs Interlock Joggers |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Interlock Joggers,ICJ,Type 1,61112000,Individual,Interlock Joggers |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+4 Pack Interlock Joggers,ICJ,Type 3,61112000,Bundle,4 Pcs Interlock Joggers |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+5 Pack Interlock Joggers,ICJ,Type 3,61112000,Bundle,5 Pcs Interlock Joggers |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+3 Pack Interlock Joggers,ICJ,Type 3,61112000,Bundle,3 Pcs Interlock Joggers |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+2 Pack Joggers,J,Type 3,61112000,Bundle,2 Pcs Winter Joggers |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+3 Pack Joggers,J,Type 3,61112000,Bundle,3 Pcs Winter Joggers |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+4 Pack Joggers,J,Type 3,61112000,Bundle,4 Pcs Winter Joggers |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Joggers,J,Type 2,61112000,Individual,Winter Joggers |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+2 Pack Leggings,LG,Type 3,61112000,Bundle,2 Pcs Leggings |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Leggings,LG,Type 1,61112000,Individual,Leggings |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+4 Pack Leggings,LG,Type 3,61112000,Bundle,4 Pcs Leggings |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+3 Pack Leggings,LG,Type 3,63013000,Bundle,3 Pcs Leggings |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Muslin Cap Mitten Booty Set,MCMB,Type 6,63013000,Individual,"Muslin Cap, Mitten & Booty Set |",{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+2 Pack Muslin Cap Mitten Booty Set,MCMB,Type 5,63013000,Bundle,"2 Pack Muslin Cap, Mitten & Booty Set |",{{Print Name seperated by commas for how many ever Prints are there}},
+Muslin Hooded Towel,MHT,Type 6,63013000,Individual,Muslin Hooded Towel |,{{Print Name seperated by commas for how many ever Prints are there}},
+2 Pack Muslin Hooded Towel,MHT,Type 5,63013000,Bundle,2 Pack Muslin Hooded Towel |,{{Print Name seperated by commas for how many ever Prints are there}},
+Muslin Jhabla,MJ,Type 2,63013000,Individual,Muslin Jhabla |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+3 Pack Muslin Jhabla,MJ,Type 4,63013000,Bundle,3 Pack Muslin Jhabla |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+5 Pack Muslin Jhabla,MJ,Type 4,63013000,Bundle,5 Pack Muslin Jhabla |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+6 Pack Muslin Jhabla,MJ,Type 4,63013000,Bundle,6 Pack Muslin Jhabla |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Muslin Jhabla Set,MJS,Type 2,63013000,Individual,Muslin Jhabla Set |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+3 Pack Muslin Jhabla Set,MJS,Type 4,63013000,Bundle,3 Pack Muslin Jhabla Set |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+2 Pack Muslin Langoti,MLG,Type 6,63013000,Individual,Muslin Langoti |,{{Print Name seperated by commas for how many ever Prints are there}},
+2 Pack Muslin Napkin,MNK,Type 6,63013000,Individual,Muslin Napkin |,{{Print Name seperated by commas for how many ever Prints are there}},
+3 Pack Muslin Swaddle,MSD,Type 5,63013000,Bundle,3 Pack Muslin Swaddle |,{{Print Name seperated by commas for how many ever Prints are there}},
+Muslin Swaddle,MSD,Type 6,63013000,Individual,Muslin Swaddle |,{{Print Name seperated by commas for how many ever Prints are there}},
+2 Pack Muslin Swaddle,MSD,Type 5,63013000,Bundle,2 Pack Muslin Swaddle |,{{Print Name seperated by commas for how many ever Prints are there}},
+5 Pack Muslin Swaddle,MSD,Type 5,63013000,Bundle,5 Pack Muslin Swaddle |,{{Print Name seperated by commas for how many ever Prints are there}},
+2 Pack Muslin Wash Cloth,MWC,Type 6,63013000,Individual,Muslin Wash Cloth |,{{Print Name seperated by commas for how many ever Prints are there}},
+One Piece,OP,Type 0,61112000,Individual,One Piece |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Pant,P,Type 0,61112000,Individual,Pant |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Short,S,Type 0,61112000,Individual,Short |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+2 Pack Sweatshirts,SW,Type 3,61112000,Bundle,2 Pack Sweatshirts |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+3 Pack Sweatshirts,SW,Type 3,61112000,Bundle,3 Pack Sweatshirts |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+5 Pack Sweatshirts,SW,Type 3,61112000,Bundle,5 Pack Sweatshirts |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Sweatshirt,SW,Type 2,61112000,Individual,Sweatshirt |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Sweatshirt & Joggers Set,SW_J,Type 1,61112000,Bundle,Unisex Sweatshirt & Joggers Set |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+4 Pack Sweatshirt & Joggers,SW_J,Type 3,61112000,Bundle,2 Pack Unisex Sweatshirt & Joggers |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+6 Pack Sweatshirt & Joggers,SW_J,Type 3,61112000,Bundle,3 Pack Unisex Sweatshirt & Joggers |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+T-shirt,T,Type 0,61112000,Individual,Half Sleeves T-Shirt |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+3 Pack T-Shirt,T,Type 3,61112000,Bundle,3 Pack Half Sleeves Unisex T-Shirt |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+2 Pack T-Shirt,T,Type 3,61112000,Bundle,2 Pack Half Sleeves Unisex T-Shirt |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+8 Pack T-Shirt,T,Type 3,61112000,Bundle,8 Pack Half Sleeves Unisex T-Shirts |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+3 Pack FS T-Shirt,T,Type 3,61112000,Bundle,3 Pack Full Sleeves Unisex T-Shirts |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+2 Pack FS T-Shirt,T,Type 3,61112000,Bundle,2 Pack Full Sleeves Unisex T-Shirts |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+5 Pack T-Shirt,T,Type 3,61112000,Bundle,5 Pack Half Sleeves Unisex T-Shirts |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+8 Pack T-Shirt & Pant,T_P,Type 3,61112000,Bundle,4 Pack Half Sleeves Unisex Co-ord Set |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+T-Shirt & Pant,T_P,Type 1,61112000,Individual,Half Sleeves Unisex Co-ord Set |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+6 Pack T-Shirt & Pant,T_P,Type 3,61112000,Bundle,3 Pack Half Sleeves T-Shirt & Pant |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+6 Pack T-Shirt & Short,T_S,Type 3,61112000,Bundle,3 Pack T-Shirt & Shorts Unisex Co-ord Set |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+T-Shirt & Short,T_S,Type 1,61112000,Individual,T-Shirt & Shorts Unisex Co-ord Set |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+8 Pack T-Shirt & Short,T_S,Type 3,61112000,Bundle,4 Pack T-Shirt & Shorts Unisex Co-ord Set |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Hoodie,WH,Type 1,61112000,Individual,Hoodie |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+Hoodie & Winter Jogger,WH,Type 3,61112000,Bundle,Winter Hoodie & Winter Jogger Set |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+2 Pack Hoodies,WH,Type 3,61112000,Bundle,2 Pack Hoodies |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+T-Shirt & Cotton Joggers,T_CJ,Type 3,61112000,Bundle,Half Sleeves Unisex T-Shirt & Joggers Set |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+FS T-Shirt & Cotton Joggers,FT_CJ,Type 3,61112000,Bundle,Full Sleeves Unisex Co-ord Set |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
+T-Shirt & Cotton Shorts,T_CS,Type 3,61112000,Bundle,T-Shirt & Shorts Unisex Co-ord Set |,{{Print Name seperated by commas for how many ever Prints are there}},{{Size}}
