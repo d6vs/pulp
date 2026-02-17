@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { getCategories, getPrints, getSizes, getPurchaseOrdersByDate } from "../actions"
 import type { Category, Print, Size, PurchaseOrder } from "../types"
+import { useRealtimeSubscription, useRefreshOnFocus } from "@/hooks/useRealtimeSubscription"
 
 export function usePurchaseOrderData() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -51,12 +52,51 @@ export function usePurchaseOrderData() {
     fetchPurchaseOrders()
   }, [selectedDate])
 
-  const refetchPurchaseOrders = async () => {
+  const refetchPurchaseOrders = useCallback(async () => {
     const result = await getPurchaseOrdersByDate(selectedDate)
     if (result.data) {
       setPurchaseOrders(result.data)
     }
-  }
+  }, [selectedDate])
+
+  const refetchMasterData = useCallback(async () => {
+    const [categoriesResult, printsResult, sizesResult] = await Promise.all([
+      getCategories(),
+      getPrints(),
+      getSizes(),
+    ])
+    if (categoriesResult.data) setCategories(categoriesResult.data)
+    if (printsResult.data) setPrints(printsResult.data)
+    if (sizesResult.data) setSizes(sizesResult.data)
+  }, [])
+
+  // Real-time subscription: auto-refresh when another user adds/updates/deletes orders
+  useRealtimeSubscription({
+    table: "purchase_orders",
+    onAnyChange: refetchPurchaseOrders,
+    showToasts: true,
+    toastMessages: {
+      insert: "New order added by another user",
+      update: "Order updated by another user",
+      delete: "Order deleted by another user",
+    },
+  })
+
+  // Also listen for master data changes
+  useRealtimeSubscription({
+    table: "product_categories",
+    onAnyChange: refetchMasterData,
+    showToasts: false,
+  })
+
+  useRealtimeSubscription({
+    table: "prints_name",
+    onAnyChange: refetchMasterData,
+    showToasts: false,
+  })
+
+  // Refresh when user returns to this tab
+  useRefreshOnFocus(refetchPurchaseOrders)
 
   return {
     categories,

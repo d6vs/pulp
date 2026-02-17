@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { getCategories } from "../../master-data/actions"
 import { getItemMaster } from "../actions"
+import { useRealtimeSubscription, useRefreshOnFocus } from "@/hooks/useRealtimeSubscription"
 
 type Category = {
   id: string
@@ -50,12 +51,27 @@ export function useItemMasterData() {
     fetchItemMaster()
   }, [selectedDate])
 
-  const refetchItemMaster = async () => {
+  const refetchItemMaster = useCallback(async () => {
     const result = await getItemMaster(selectedDate)
     if (result.data) {
       setItemMasterData(result.data)
     }
-  }
+  }, [selectedDate])
+
+  // Real-time subscription: auto-refresh when another user adds/updates/deletes items
+  useRealtimeSubscription({
+    table: "item_master",
+    onAnyChange: refetchItemMaster,
+    showToasts: true,
+    toastMessages: {
+      insert: "New item added by another user",
+      update: "Item updated by another user",
+      delete: "Item deleted by another user",
+    },
+  })
+
+  // Refresh when user returns to this tab
+  useRefreshOnFocus(refetchItemMaster)
 
   return {
     categories,

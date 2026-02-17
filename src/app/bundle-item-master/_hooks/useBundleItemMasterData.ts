@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { getCategories } from "@/app/purchase-orders/actions"
 import { getBundleItemMaster } from "../actions"
+import { useRealtimeSubscription, useRefreshOnFocus } from "@/hooks/useRealtimeSubscription"
 
 type Category = {
   id: string
@@ -112,12 +113,27 @@ export function useBundleItemMasterData() {
     fetchData()
   }, [fetchData])
 
-  const refetchBundleItemMaster = async () => {
+  const refetchBundleItemMaster = useCallback(async () => {
     const result = await getBundleItemMaster(selectedDate)
     if (result.data) {
       setBundleItemMasterData(result.data)
     }
-  }
+  }, [selectedDate])
+
+  // Real-time subscription: auto-refresh when another user adds/updates/deletes
+  useRealtimeSubscription({
+    table: "bundle_item_master",
+    onAnyChange: refetchBundleItemMaster,
+    showToasts: true,
+    toastMessages: {
+      insert: "New bundle added by another user",
+      update: "Bundle data was updated",
+      delete: "A bundle was removed",
+    },
+  })
+
+  // Also refresh when user returns to this tab
+  useRefreshOnFocus(refetchBundleItemMaster)
 
   return {
     bundleCategories,

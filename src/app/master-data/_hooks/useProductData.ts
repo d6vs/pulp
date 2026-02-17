@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { getPrints, getCategories, getSizes, getProducts } from "../actions"
+import { useRealtimeSubscription, useRefreshOnFocus } from "@/hooks/useRealtimeSubscription"
 
 type Print = {
   id: string
@@ -78,6 +79,85 @@ export function useProductData() {
     fetchData()
   }, [])
 
+  // Memoized refetch functions for realtime subscriptions
+  const refetchPrints = useCallback(async () => {
+    const result = await getPrints()
+    if (result.data) setPrints(result.data)
+  }, [])
+
+  const refetchCategories = useCallback(async () => {
+    const result = await getCategories()
+    if (result.data) {
+      setCategories(result.data)
+      const bundleCats = result.data.filter(
+        (c: Category) => c.category_type?.toLowerCase().trim() === "bundle"
+      )
+      setBundleCategories(bundleCats)
+      const individualCats = result.data.filter(
+        (c: Category) => c.category_type?.toLowerCase().trim() !== "bundle"
+      )
+      setIndividualCategories(individualCats)
+    }
+  }, [])
+
+  const refetchSizes = useCallback(async () => {
+    const result = await getSizes()
+    if (result.data) setSizes(result.data)
+  }, [])
+
+  const refetchProducts = useCallback(async () => {
+    const result = await getProducts()
+    if (result.data) setProducts(result.data)
+  }, [])
+
+  // Real-time subscriptions: auto-refresh when another user makes changes
+  useRealtimeSubscription({
+    table: "prints_name",
+    onAnyChange: refetchPrints,
+    showToasts: true,
+    toastMessages: {
+      insert: "New print added by another user",
+      update: "Print updated by another user",
+      delete: "Print deleted by another user",
+    },
+  })
+
+  useRealtimeSubscription({
+    table: "product_categories",
+    onAnyChange: refetchCategories,
+    showToasts: true,
+    toastMessages: {
+      insert: "New category added by another user",
+      update: "Category updated by another user",
+      delete: "Category deleted by another user",
+    },
+  })
+
+  useRealtimeSubscription({
+    table: "sizes",
+    onAnyChange: refetchSizes,
+    showToasts: true,
+    toastMessages: {
+      insert: "New size added by another user",
+      update: "Size updated by another user",
+      delete: "Size deleted by another user",
+    },
+  })
+
+  useRealtimeSubscription({
+    table: "products",
+    onAnyChange: refetchProducts,
+    showToasts: true,
+    toastMessages: {
+      insert: "New product added",
+      update: "Product data updated",
+      delete: "Product removed",
+    },
+  })
+
+  // Also refresh when user returns to this tab
+  useRefreshOnFocus(fetchData)
+
   return {
     prints,
     categories,
@@ -86,31 +166,9 @@ export function useProductData() {
     sizes,
     products,
     isLoading,
-    refetchPrints: async () => {
-      const result = await getPrints()
-      if (result.data) setPrints(result.data)
-    },
-    refetchCategories: async () => {
-      const result = await getCategories()
-      if (result.data) {
-        setCategories(result.data)
-        const bundleCats = result.data.filter(
-          (c: Category) => c.category_type?.toLowerCase().trim() === "bundle"
-        )
-        setBundleCategories(bundleCats)
-        const individualCats = result.data.filter(
-          (c: Category) => c.category_type?.toLowerCase().trim() !== "bundle"
-        )
-        setIndividualCategories(individualCats)
-      }
-    },
-    refetchSizes: async () => {
-      const result = await getSizes()
-      if (result.data) setSizes(result.data)
-    },
-    refetchProducts: async () => {
-      const result = await getProducts()
-      if (result.data) setProducts(result.data)
-    },
+    refetchPrints,
+    refetchCategories,
+    refetchSizes,
+    refetchProducts,
   }
 }
