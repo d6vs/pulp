@@ -513,56 +513,26 @@ export function BundleDetailsForm({
           </div>
         )}
 
-        {/* Final Sizes Selection */}
-        {bundleProducts.filter((p) => p.print !== null).length >= 1 && (
+        {/* Check Bundle Button - Show first, before sizes */}
+        {selectedBundleCategory && bundleProducts.filter((p) => p.print !== null).length >= 1 && finalSizesOptions.length > 0 && bundleExistsInReference !== true && (
           <div className="border-t border-gray-200 pt-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Final Sizes (Common)</h3>
-            {finalSizesOptions.length === 0 ? (
-              <p className="text-sm text-gray-400">No common sizes found</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {finalSizesOptions.map((size) => {
-                  const isSelected = selectedFinalSizes.some((s) => s.id === size.id)
-                  return (
-                    <button
-                      key={size.id}
-                      type="button"
-                      onClick={() => handleFinalSizeToggle(size)}
-                      className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all ${
-                        isSelected
-                          ? "bg-orange-500 text-white border-orange-500"
-                          : "bg-white text-gray-700 border-gray-300 hover:border-orange-300"
-                      }`}
-                    >
-                      {size.size_name}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={checkBundleExists}
+              className="w-full"
+              disabled={isCheckingReference}
+            >
+              {isCheckingReference ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Checking...
+                </>
+              ) : (
+                "Check Bundle Reference"
+              )}
+            </Button>
           </div>
-        )}
-
-        {/* Check Bundle Button */}
-        {selectedBundleCategory && bundleProducts.filter((p) => p.print !== null).length >= 1 && finalSizesOptions.length > 0 && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={checkBundleExists}
-            className="w-full"
-            disabled={isCheckingReference}
-          >
-            {isCheckingReference ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Checking...
-              </>
-            ) : bundleExistsInReference === true ? (
-              <span className="text-green-600">✓ Bundle exists in reference</span>
-            ) : (
-              "Check if Bundle Exists"
-            )}
-          </Button>
         )}
 
         {/* Bundle Reference Warning */}
@@ -590,11 +560,36 @@ export function BundleDetailsForm({
           </div>
         )}
 
-        {/* Checking Reference Loading */}
-        {isCheckingReference && (
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Checking bundle reference...
+        {/* Final Sizes Selection - Only show AFTER bundle reference check passes */}
+        {bundleExistsInReference === true && (
+          <div className="border-t border-gray-200 pt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-green-600">✓</span>
+              <h3 className="text-sm font-semibold text-gray-700">Bundle exists - Select Final Sizes</h3>
+            </div>
+            {finalSizesOptions.length === 0 ? (
+              <p className="text-sm text-gray-400">No common sizes found</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {finalSizesOptions.map((size) => {
+                  const isSelected = selectedFinalSizes.some((s) => s.id === size.id)
+                  return (
+                    <button
+                      key={size.id}
+                      type="button"
+                      onClick={() => handleFinalSizeToggle(size)}
+                      className={`px-4 py-2 text-sm font-medium rounded-lg border transition-all ${
+                        isSelected
+                          ? "bg-orange-500 text-white border-orange-500"
+                          : "bg-white text-gray-700 border-gray-300 hover:border-orange-300"
+                      }`}
+                    >
+                      {size.size_name}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 
