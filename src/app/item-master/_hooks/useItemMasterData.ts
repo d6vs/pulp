@@ -29,7 +29,7 @@ export function useItemMasterData() {
       setIsLoading(true)
       try {
         const categoriesResult = await getCategories()
-        if (categoriesResult.data) setCategories(categoriesResult.data)
+        if (categoriesResult.data) setCategories(categoriesResult.data.filter((c) => ![3, 4, 5].includes(c.sku_schema)))
       } catch (error) {
         console.error("Error fetching master data:", error)
       } finally {

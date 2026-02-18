@@ -28,7 +28,7 @@ export function usePurchaseOrderData() {
           getSizes(),
         ])
 
-        if (categoriesResult.data) setCategories(categoriesResult.data)
+        if (categoriesResult.data) setCategories(categoriesResult.data.filter((c) => ![3, 4, 5].includes(c.sku_schema)))
         if (printsResult.data) setPrints(printsResult.data)
         if (sizesResult.data) setSizes(sizesResult.data)
       } catch (error) {
@@ -65,7 +65,7 @@ export function usePurchaseOrderData() {
       getPrints(),
       getSizes(),
     ])
-    if (categoriesResult.data) setCategories(categoriesResult.data)
+    if (categoriesResult.data) setCategories(categoriesResult.data.filter((c) => ![3, 4, 5].includes(c.sku_schema)))
     if (printsResult.data) setPrints(printsResult.data)
     if (sizesResult.data) setSizes(sizesResult.data)
   }, [])
