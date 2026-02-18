@@ -161,12 +161,12 @@ export function TodaysOrdersList({
       order.sku,
       order.quantity,
       order.cost_price,
-      order.discount || 0,
+      order.discount,
       order.tax_class || 5
     ])
 
     exportToXLSXFromArray(headers, rows, {
-      filename: `purchase_orders_${selectedDate}.xlsx`,
+      filename: `purchase_orders_${selectedDate}.csv`,
       sheetName: "Purchase Orders",
     })
   }

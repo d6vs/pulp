@@ -1,17 +1,21 @@
-import * as XLSX from "xlsx"
 import { toast } from "sonner"
 
 type ExportOptions = {
   filename: string
-  sheetName: string
+  sheetName?: string
   showSuccessToast?: boolean
 }
 
+function escapeCSVValue(value: unknown): string {
+  const str = value === null || value === undefined ? "" : String(value)
+  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+    return `"${str.replace(/"/g, '""')}"`
+  }
+  return str
+}
+
 /**
- * Export data to XLSX using array of arrays format
- * @param headers - Array of column headers
- * @param rows - Array of arrays containing row data
- * @param options - Export options (filename, sheetName, showSuccessToast)
+ * Export data to CSV using array of arrays format
  */
 export function exportToXLSXFromArray(
   headers: string[],
@@ -19,14 +23,12 @@ export function exportToXLSXFromArray(
   options: ExportOptions
 ) {
   try {
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows])
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, options.sheetName)
+    const csvRows = [headers, ...rows].map((row) =>
+      row.map(escapeCSVValue).join(",")
+    )
+    const csvContent = csvRows.join("\n")
 
-    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" })
-    const blob = new Blob([wbout], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    })
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
@@ -40,32 +42,46 @@ export function exportToXLSXFromArray(
       toast.success("File downloaded successfully")
     }
   } catch (error) {
-    console.error("Error exporting to XLSX:", error)
+    console.error("Error exporting to CSV:", error)
     toast.error("Failed to download file")
   }
 }
 
 /**
- * Export data to XLSX using JSON format
- * @param data - Array of objects to export
- * @param options - Export options (filename, sheetName, showSuccessToast)
+ * Export data to CSV using JSON format
  */
 export function exportToXLSXFromJSON(
   data: Record<string, unknown>[],
   options: ExportOptions
 ) {
   try {
-    const worksheet = XLSX.utils.json_to_sheet(data)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, options.sheetName)
+    if (!data.length) {
+      toast.error("No data to export")
+      return
+    }
 
-    XLSX.writeFile(workbook, options.filename)
+    const headers = Object.keys(data[0])
+    const rows = data.map((obj) => headers.map((h) => obj[h]))
+    const csvRows = [headers, ...rows].map((row) =>
+      row.map(escapeCSVValue).join(",")
+    )
+    const csvContent = csvRows.join("\n")
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = options.filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
 
     if (options.showSuccessToast !== false) {
       toast.success("File downloaded successfully")
     }
   } catch (error) {
-    console.error("Error exporting to XLSX:", error)
+    console.error("Error exporting to CSV:", error)
     toast.error("Failed to download file")
   }
 }

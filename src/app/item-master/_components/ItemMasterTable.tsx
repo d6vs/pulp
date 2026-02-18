@@ -41,7 +41,7 @@ export function ItemMasterTable({ itemMasterData, selectedDate, onDataChanged }:
     )
 
     exportToXLSXFromArray(ITEM_MASTER_HEADERS, rows, {
-      filename: `Item_Master_${selectedDate}.xlsx`,
+      filename: `Item_Master_${selectedDate}.csv`,
       sheetName: "Item Master",
     })
   }

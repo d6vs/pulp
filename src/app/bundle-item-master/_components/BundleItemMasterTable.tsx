@@ -159,7 +159,7 @@ export function BundleItemMasterTable({
     }))
 
     exportToXLSXFromJSON(exportData, {
-      filename: `bundle_item_master_${selectedDate}.xlsx`,
+      filename: `bundle_item_master_${selectedDate}.csv`,
       sheetName: "Bundle Item Master",
     })
   }
