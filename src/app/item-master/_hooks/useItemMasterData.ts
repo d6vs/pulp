@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { getCategories } from "../../master-data/actions"
 import { getItemMaster } from "../actions"
-import { useRealtimeSubscription, useRefreshOnFocus } from "@/hooks/useRealtimeSubscription"
 
 type Category = {
   id: string
@@ -23,33 +22,31 @@ export function useItemMasterData() {
   })
   const [isLoading, setIsLoading] = useState(true)
 
-  // Fetch master data
-  useEffect(() => {
-    async function fetchMasterData() {
-      setIsLoading(true)
-      try {
-        const categoriesResult = await getCategories()
-        if (categoriesResult.data) setCategories(categoriesResult.data.filter((c) => ![3, 4, 5].includes(c.sku_schema)))
-      } catch (error) {
-        console.error("Error fetching master data:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
+  const fetchData = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const [categoriesResult, itemMasterResult] = await Promise.all([
+        getCategories(),
+        getItemMaster(selectedDate),
+      ])
 
-    fetchMasterData()
-  }, [])
-
-  // Fetch item master when date changes
-  useEffect(() => {
-    async function fetchItemMaster() {
-      const result = await getItemMaster(selectedDate)
-      if (result.data) {
-        setItemMasterData(result.data)
+      if (categoriesResult.data) {
+        setCategories(categoriesResult.data.filter((c) => ![3, 4, 5].includes(c.sku_schema)))
       }
+
+      if (itemMasterResult.data) {
+        setItemMasterData(itemMasterResult.data)
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error)
+    } finally {
+      setIsLoading(false)
     }
-    fetchItemMaster()
   }, [selectedDate])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const refetchItemMaster = useCallback(async () => {
     const result = await getItemMaster(selectedDate)
@@ -58,14 +55,6 @@ export function useItemMasterData() {
     }
   }, [selectedDate])
 
-  // Real-time subscription: auto-refresh when data changes
-  useRealtimeSubscription({
-    table: "item_master",
-    onAnyChange: refetchItemMaster,
-  })
-
-  // Refresh when user returns to this tab
-  useRefreshOnFocus(refetchItemMaster)
 
   return {
     categories,

@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { getCategories } from "@/app/purchase-orders/actions"
 import { getBundleItemMaster } from "../actions"
-import { useRealtimeSubscription, useRefreshOnFocus } from "@/hooks/useRealtimeSubscription"
 
 type Category = {
   id: string
@@ -120,14 +119,6 @@ export function useBundleItemMasterData() {
     }
   }, [selectedDate])
 
-  // Real-time subscription: auto-refresh when data changes
-  useRealtimeSubscription({
-    table: "bundle_item_master",
-    onAnyChange: refetchBundleItemMaster,
-  })
-
-  // Also refresh when user returns to this tab
-  useRefreshOnFocus(refetchBundleItemMaster)
 
   return {
     bundleCategories,
