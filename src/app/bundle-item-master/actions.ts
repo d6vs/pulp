@@ -335,6 +335,7 @@ export async function generateBundleItemMaster(
             ...restBundleData,
             style: internal_style_name,
             scan_type: "SIMPLE",
+            is_visible: true,
             created_at: now,
             updated_at: now,
           })
@@ -376,6 +377,7 @@ export async function getBundleItemMaster() {
     const { data, error } = await supabaseAdmin
       .from("bundle_item_master")
       .select("*")
+      .eq("is_visible", true)
       .order("created_at", { ascending: false })
 
     if (error) {
@@ -397,19 +399,19 @@ export async function deleteBundleItemMasterByDate() {
   try {
     const { data, error } = await supabaseAdmin
       .from("bundle_item_master")
-      .delete()
-      .neq("id", "00000000-0000-0000-0000-000000000000")
+      .update({ is_visible: false })
+      .eq("is_visible", true)
       .select()
 
     if (error) {
-      console.error("Error deleting bundle item master:", error)
+      console.error("Error hiding bundle item master:", error)
       return { deletedCount: 0, error: error.message }
     }
 
     return { deletedCount: data?.length || 0, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { deletedCount: 0, error: "Unable to delete items. Please try again." }
+    return { deletedCount: 0, error: "Unable to hide items. Please try again." }
   }
 }
 
@@ -514,6 +516,7 @@ export async function addBundlesToItemMasterFromReference(
           component_price: componentPrice,
           tax_calculation_type: component.tax_calculation_type,
           scan_type: "SIMPLE",
+          is_visible: true,
           created_at: now,
           updated_at: now,
         })

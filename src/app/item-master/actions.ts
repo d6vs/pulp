@@ -82,6 +82,7 @@ export async function generateItemMaster(
             isbn: FIXED_DEFAULTS.isbn,
             brand: FIXED_DEFAULTS.brand,
             product_id: matchedProduct.id,
+            is_visible: true,
           },
           { onConflict: "product_code" }
         )
@@ -108,6 +109,7 @@ export async function getItemMaster() {
     const { data, error } = await supabaseAdmin
       .from("item_master")
       .select("*")
+      .eq("is_visible", true)
       .order("created_at", { ascending: false })
 
     if (error) {
@@ -125,18 +127,18 @@ export async function deleteItemMasterByDate() {
   try {
     const { data, error } = await supabaseAdmin
       .from("item_master")
-      .delete()
-      .neq("id", "00000000-0000-0000-0000-000000000000")
+      .update({ is_visible: false })
+      .eq("is_visible", true)
       .select()
 
     if (error) {
-      console.error("Error deleting item master:", error)
+      console.error("Error hiding item master:", error)
       return { deletedCount: 0, error: error.message }
     }
 
     return { deletedCount: data?.length || 0, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { deletedCount: 0, error: "Unable to delete items. Please try again." }
+    return { deletedCount: 0, error: "Unable to hide items. Please try again." }
   }
 }

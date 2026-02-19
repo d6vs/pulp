@@ -71,6 +71,7 @@ export async function getPurchaseOrdersByDate() {
     const { data, error } = await supabaseAdmin
       .from("purchase_orders")
       .select("*")
+      .eq("is_visible", true)
       .order("created_at", { ascending: false })
 
     if (error) {
@@ -168,19 +169,19 @@ export async function deletePurchaseOrdersByDate() {
   try {
     const { data, error } = await supabaseAdmin
       .from("purchase_orders")
-      .delete()
-      .neq("id", "00000000-0000-0000-0000-000000000000")
+      .update({ is_visible: false })
+      .eq("is_visible", true)
       .select()
 
     if (error) {
-      console.error("Error deleting purchase orders:", error)
+      console.error("Error hiding purchase orders:", error)
       return { data: null, error: error.message, deletedCount: 0 }
     }
 
     return { data, error: null, deletedCount: data?.length || 0 }
   } catch (error) {
     console.error("Unexpected error:", error)
-    return { data: null, error: "Failed to delete purchase orders", deletedCount: 0 }
+    return { data: null, error: "Failed to hide purchase orders", deletedCount: 0 }
   }
 }
 
