@@ -8,11 +8,11 @@ export default function ItemMasterPage() {
   const {
     categories,
     itemMasterData,
-    selectedDate,
-    setSelectedDate,
     isLoading,
     refetchItemMaster,
   } = useItemMasterData()
+
+  const todayIST = new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().split("T")[0]
 
   if (isLoading) {
     return (
@@ -28,28 +28,17 @@ export default function ItemMasterPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header with Date Selector */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Item Master</h1>
-            <p className="text-sm text-gray-500">Create and manage item master</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-gray-700">Date:</label>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-          </div>
+        {/* Header */}
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Item Master</h1>
+          <p className="text-sm text-gray-500">Create and manage item master</p>
         </div>
 
         <ItemDetailsForm categories={categories} onItemsAdded={refetchItemMaster} />
 
         <ItemMasterTable
           itemMasterData={itemMasterData}
-          selectedDate={selectedDate}
+          selectedDate={todayIST}
           onDataChanged={refetchItemMaster}
         />
       </div>

@@ -14,12 +14,6 @@ export function useItemMasterData() {
   const [categories, setCategories] = useState<Category[]>([])
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [itemMasterData, setItemMasterData] = useState<any[]>([])
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const now = new Date()
-    const istOffset = 5.5 * 60 * 60 * 1000
-    const istDate = new Date(now.getTime() + istOffset)
-    return istDate.toISOString().split("T")[0]
-  })
   const [isLoading, setIsLoading] = useState(true)
 
   const fetchData = useCallback(async () => {
@@ -27,7 +21,7 @@ export function useItemMasterData() {
     try {
       const [categoriesResult, itemMasterResult] = await Promise.all([
         getCategories(),
-        getItemMaster(selectedDate),
+        getItemMaster(),
       ])
 
       if (categoriesResult.data) {
@@ -42,25 +36,22 @@ export function useItemMasterData() {
     } finally {
       setIsLoading(false)
     }
-  }, [selectedDate])
+  }, [])
 
   useEffect(() => {
     fetchData()
   }, [fetchData])
 
   const refetchItemMaster = useCallback(async () => {
-    const result = await getItemMaster(selectedDate)
+    const result = await getItemMaster()
     if (result.data) {
       setItemMasterData(result.data)
     }
-  }, [selectedDate])
-
+  }, [])
 
   return {
     categories,
     itemMasterData,
-    selectedDate,
-    setSelectedDate,
     isLoading,
     refetchItemMaster,
   }

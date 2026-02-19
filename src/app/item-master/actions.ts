@@ -103,25 +103,17 @@ export async function generateItemMaster(
   }
 }
 
-export async function getItemMaster(date: string) {
+export async function getItemMaster(_date?: string) {
   try {
-    // Convert IST boundaries to UTC for querying
-    // IST is UTC+05:30, so midnight IST = previous day 18:30 UTC
-    const istStart = new Date(`${date}T00:00:00.000+05:30`)
-    const istEnd = new Date(istStart.getTime() + 24 * 60 * 60 * 1000)
-
     const { data, error } = await supabaseAdmin
       .from("item_master")
       .select("*")
-      .gte("created_at", istStart.toISOString())
-      .lt("created_at", istEnd.toISOString())
       .order("created_at", { ascending: false })
 
     if (error) {
       console.error("Error fetching item master:", error)
       return { data: null, error: error.message }
     }
-    console.log(`Fetched ${data.length} item master records for date=${date}`)
     return { data, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
@@ -129,17 +121,12 @@ export async function getItemMaster(date: string) {
   }
 }
 
-export async function deleteItemMasterByDate(date: string) {
+export async function deleteItemMasterByDate(_date?: string) {
   try {
-    // Convert IST boundaries to UTC for querying
-    const istStart = new Date(`${date}T00:00:00.000+05:30`)
-    const istEnd = new Date(istStart.getTime() + 24 * 60 * 60 * 1000)
-
     const { data, error } = await supabaseAdmin
       .from("item_master")
       .delete()
-      .gte("created_at", istStart.toISOString())
-      .lt("created_at", istEnd.toISOString())
+      .neq("id", "00000000-0000-0000-0000-000000000000")
       .select()
 
     if (error) {

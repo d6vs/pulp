@@ -70,10 +70,6 @@ export function useBundleItemMasterData() {
   const [bundleCategories, setBundleCategories] = useState<Category[]>([])
   const [individualCategories, setIndividualCategories] = useState<Category[]>([])
   const [bundleItemMasterData, setBundleItemMasterData] = useState<BundleItemMaster[]>([])
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const today = new Date()
-    return today.toISOString().split("T")[0]
-  })
   const [isLoading, setIsLoading] = useState(true)
 
   const fetchData = useCallback(async () => {
@@ -81,17 +77,15 @@ export function useBundleItemMasterData() {
     try {
       const [categoriesResult, itemMasterResult] = await Promise.all([
         getCategories(),
-        getBundleItemMaster(selectedDate),
+        getBundleItemMaster(),
       ])
 
       if (categoriesResult.data) {
-        // Filter for bundle categories by category_type (case-insensitive)
         const bundleCats = categoriesResult.data.filter(
           (c: Category) => c.category_type?.toLowerCase().trim() === "bundle"
         )
         setBundleCategories(bundleCats)
 
-        // Filter for individual categories (non-Bundle)
         const individualCats = categoriesResult.data.filter(
           (c: Category) => c.category_type?.toLowerCase().trim() !== "bundle"
         )
@@ -106,26 +100,23 @@ export function useBundleItemMasterData() {
     } finally {
       setIsLoading(false)
     }
-  }, [selectedDate])
+  }, [])
 
   useEffect(() => {
     fetchData()
   }, [fetchData])
 
   const refetchBundleItemMaster = useCallback(async () => {
-    const result = await getBundleItemMaster(selectedDate)
+    const result = await getBundleItemMaster()
     if (result.data) {
       setBundleItemMasterData(result.data)
     }
-  }, [selectedDate])
-
+  }, [])
 
   return {
     bundleCategories,
     individualCategories,
     bundleItemMasterData,
-    selectedDate,
-    setSelectedDate,
     isLoading,
     refetchBundleItemMaster,
   }

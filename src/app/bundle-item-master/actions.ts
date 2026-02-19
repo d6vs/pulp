@@ -371,20 +371,12 @@ export async function generateBundleItemMaster(
 // ============================================
 // ACTION 2: Get Bundle Item Master
 // ============================================
-export async function getBundleItemMaster(date?: string) {
+export async function getBundleItemMaster(_date?: string) {
   try {
-    let query = supabaseAdmin.from("bundle_item_master").select("*")
-
-    if (date) {
-      const istStart = new Date(`${date}T00:00:00.000+05:30`)
-      const istEnd = new Date(istStart.getTime() + 24 * 60 * 60 * 1000)
-
-      query = query
-        .gte("created_at", istStart.toISOString())
-        .lt("created_at", istEnd.toISOString())
-    }
-
-    const { data, error } = await query.order("created_at", { ascending: false })
+    const { data, error } = await supabaseAdmin
+      .from("bundle_item_master")
+      .select("*")
+      .order("created_at", { ascending: false })
 
     if (error) {
       console.error("Error fetching bundle item master:", error)
@@ -401,39 +393,20 @@ export async function getBundleItemMaster(date?: string) {
 // ============================================
 // ACTION 3: Delete Bundle Item Master by Date
 // ============================================
-export async function deleteBundleItemMasterByDate(date: string) {
+export async function deleteBundleItemMasterByDate(_date?: string) {
   try {
-    if (date) {
-      const istStart = new Date(`${date}T00:00:00.000+05:30`)
-      const istEnd = new Date(istStart.getTime() + 24 * 60 * 60 * 1000)
+    const { data, error } = await supabaseAdmin
+      .from("bundle_item_master")
+      .delete()
+      .neq("id", "00000000-0000-0000-0000-000000000000")
+      .select()
 
-      const { data, error } = await supabaseAdmin
-        .from("bundle_item_master")
-        .delete()
-        .gte("created_at", istStart.toISOString())
-        .lt("created_at", istEnd.toISOString())
-        .select()
-
-      if (error) {
-        console.error("Error deleting bundle item master:", error)
-        return { deletedCount: 0, error: error.message }
-      }
-
-      return { deletedCount: data?.length || 0, error: null }
-    } else {
-      const { data, error } = await supabaseAdmin
-        .from("bundle_item_master")
-        .delete()
-        .neq("id", "00000000-0000-0000-0000-000000000000")
-        .select()
-
-      if (error) {
-        console.error("Error deleting all bundle item master:", error)
-        return { deletedCount: 0, error: error.message }
-      }
-
-      return { deletedCount: data?.length || 0, error: null }
+    if (error) {
+      console.error("Error deleting bundle item master:", error)
+      return { deletedCount: 0, error: error.message }
     }
+
+    return { deletedCount: data?.length || 0, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
     return { deletedCount: 0, error: "Unable to delete items. Please try again." }

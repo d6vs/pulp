@@ -66,12 +66,11 @@ export async function createPurchaseOrder(purchaseOrder: {
   }
 }
 
-export async function getPurchaseOrdersByDate(date: string) {
+export async function getPurchaseOrdersByDate(_date?: string) {
   try {
     const { data, error } = await supabaseAdmin
       .from("purchase_orders")
       .select("*")
-      .eq("po_date", date)
       .order("created_at", { ascending: false })
 
     if (error) {
@@ -165,25 +164,12 @@ export async function deletePurchaseOrder(id: string) {
   }
 }
 
-export async function deletePurchaseOrdersByDate(date: string) {
+export async function deletePurchaseOrdersByDate(_date?: string) {
   try {
-    // Check if date is within 5 days
-    const orderDate = new Date(date)
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    orderDate.setHours(0, 0, 0, 0)
-
-    const diffTime = today.getTime() - orderDate.getTime()
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-
-    if (diffDays > 5) {
-      return { data: null, error: "Cannot delete orders older than 5 days", deletedCount: 0 }
-    }
-
     const { data, error } = await supabaseAdmin
       .from("purchase_orders")
       .delete()
-      .eq("po_date", date)
+      .neq("id", "00000000-0000-0000-0000-000000000000")
       .select()
 
     if (error) {
