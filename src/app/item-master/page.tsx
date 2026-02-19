@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import { useItemMasterData } from "./_hooks/useItemMasterData"
 import { ItemDetailsForm } from "./_components/ItemDetailsForm"
 import { ItemMasterTable } from "./_components/ItemMasterTable"
@@ -12,7 +13,7 @@ export default function ItemMasterPage() {
     refetchItemMaster,
   } = useItemMasterData()
 
-  const todayIST = new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().split("T")[0]
+  const todayIST = useMemo(() => new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().split("T")[0], [])
 
   if (isLoading) {
     return (
