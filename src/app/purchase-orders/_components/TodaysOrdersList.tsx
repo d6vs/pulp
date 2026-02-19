@@ -138,7 +138,7 @@ export function TodaysOrdersList({
   const handleDeleteAllOrders = async () => {
     toast.promise(
       async () => {
-        const result = await deletePurchaseOrdersByDate(selectedDate)
+        const result = await deletePurchaseOrdersByDate()
         if (result.error) {
           throw new Error(result.error)
         }
@@ -179,7 +179,7 @@ export function TodaysOrdersList({
       rowCount: purchaseOrders.length,
     })
 
-    const result = await deletePurchaseOrdersByDate(selectedDate)
+    const result = await deletePurchaseOrdersByDate()
     if (result.error) {
       toast.error(`Download succeeded but failed to clear orders: ${result.error}`)
     } else {

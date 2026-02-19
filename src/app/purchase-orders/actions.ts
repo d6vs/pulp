@@ -66,7 +66,7 @@ export async function createPurchaseOrder(purchaseOrder: {
   }
 }
 
-export async function getPurchaseOrdersByDate(_date?: string) {
+export async function getPurchaseOrdersByDate() {
   try {
     const { data, error } = await supabaseAdmin
       .from("purchase_orders")
@@ -164,7 +164,7 @@ export async function deletePurchaseOrder(id: string) {
   }
 }
 
-export async function deletePurchaseOrdersByDate(_date?: string) {
+export async function deletePurchaseOrdersByDate() {
   try {
     const { data, error } = await supabaseAdmin
       .from("purchase_orders")

@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState } from "react"
 import { usePurchaseOrderData } from "./_hooks/usePurchaseOrderData"
+
 import { OrderFormInputs } from "./_components/OrderFormInputs"
 import { OrderSummaryCard } from "./_components/OrderSummaryCard"
 import { TodaysOrdersList } from "./_components/TodaysOrdersList"
@@ -19,8 +20,7 @@ export default function PurchaseOrdersPage() {
     isLoading,
     refetchPurchaseOrders,
   } = usePurchaseOrderData()
-
-  const todayIST = useMemo(() => new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().split("T")[0], [])
+  const todayIST = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })
 
   // Form state
   const [categoryInput, setCategoryInput] = useState("")

@@ -1,6 +1,5 @@
 "use client"
 
-import { useMemo } from "react"
 import { useItemMasterData } from "./_hooks/useItemMasterData"
 import { ItemDetailsForm } from "./_components/ItemDetailsForm"
 import { ItemMasterTable } from "./_components/ItemMasterTable"
@@ -12,9 +11,8 @@ export default function ItemMasterPage() {
     isLoading,
     refetchItemMaster,
   } = useItemMasterData()
-
-  const todayIST = useMemo(() => new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().split("T")[0], [])
-
+  
+  const todayIST = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">

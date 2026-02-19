@@ -54,7 +54,7 @@ export function ItemMasterTable({ itemMasterData, selectedDate, onDataChanged }:
       rowCount: itemMasterData.length,
     })
 
-    const result = await deleteItemMasterByDate(selectedDate)
+    const result = await deleteItemMasterByDate()
     if (result.error) {
       toast.error(`Download succeeded but failed to clear items: ${result.error}`)
     } else {
@@ -65,7 +65,7 @@ export function ItemMasterTable({ itemMasterData, selectedDate, onDataChanged }:
   const handleDeleteAll = async () => {
     setIsDeleting(true)
     try {
-      const result = await deleteItemMasterByDate(selectedDate)
+      const result = await deleteItemMasterByDate()
       if (result.error) {
         toast.error(result.error)
       } else {

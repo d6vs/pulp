@@ -1,6 +1,5 @@
 "use client"
 
-import { useMemo } from "react"
 import { useBundleItemMasterData } from "./_hooks/useBundleItemMasterData"
 import { BundleDetailsForm } from "./_components/BundleDetailsForm"
 import { BundleItemMasterTable } from "./_components/BundleItemMasterTable"
@@ -13,9 +12,9 @@ export default function BundleItemMasterPage() {
     isLoading,
     refetchBundleItemMaster,
   } = useBundleItemMasterData()
-
-  const todayIST = useMemo(() => new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().split("T")[0], [])
-
+  
+  const todayIST = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" })
+  
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">

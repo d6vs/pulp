@@ -371,7 +371,7 @@ export async function generateBundleItemMaster(
 // ============================================
 // ACTION 2: Get Bundle Item Master
 // ============================================
-export async function getBundleItemMaster(_date?: string) {
+export async function getBundleItemMaster() {
   try {
     const { data, error } = await supabaseAdmin
       .from("bundle_item_master")
@@ -393,7 +393,7 @@ export async function getBundleItemMaster(_date?: string) {
 // ============================================
 // ACTION 3: Delete Bundle Item Master by Date
 // ============================================
-export async function deleteBundleItemMasterByDate(_date?: string) {
+export async function deleteBundleItemMasterByDate() {
   try {
     const { data, error } = await supabaseAdmin
       .from("bundle_item_master")

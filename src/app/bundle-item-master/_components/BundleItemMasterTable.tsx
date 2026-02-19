@@ -91,7 +91,7 @@ export function BundleItemMasterTable({
   const handleDeleteAll = async () => {
     setIsDeleting(true)
     try {
-      const result = await deleteBundleItemMasterByDate(selectedDate)
+      const result = await deleteBundleItemMasterByDate()
       if (result.error) {
         toast.error(result.error)
       } else {
@@ -172,7 +172,7 @@ export function BundleItemMasterTable({
       rowCount: bundleItemMasterData.length,
     })
 
-    const result = await deleteBundleItemMasterByDate(selectedDate)
+    const result = await deleteBundleItemMasterByDate()
     if (result.error) {
       toast.error(`Download succeeded but failed to clear items: ${result.error}`)
     } else {

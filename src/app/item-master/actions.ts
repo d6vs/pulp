@@ -103,7 +103,7 @@ export async function generateItemMaster(
   }
 }
 
-export async function getItemMaster(_date?: string) {
+export async function getItemMaster() {
   try {
     const { data, error } = await supabaseAdmin
       .from("item_master")
@@ -121,7 +121,7 @@ export async function getItemMaster(_date?: string) {
   }
 }
 
-export async function deleteItemMasterByDate(_date?: string) {
+export async function deleteItemMasterByDate() {
   try {
     const { data, error } = await supabaseAdmin
       .from("item_master")
