@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
-import { getPrints, getCategories, getSizes, getProducts } from "../actions"
+import { getPrints, getCategories, getSizes, getProducts, getBundleReferences } from "../actions"
 
 type Print = {
   id: string
@@ -26,10 +26,29 @@ type Size = {
 
 type Product = {
   id: string
+  product_code: string | null
+  name: string | null
+  color: string | null
+  base_price: number | null
+  cost_price: number | null
+  mrp: number | null
+  product_categories: { category_name: string; category_code: string | null } | { category_name: string; category_code: string | null }[] | null
+  sizes: { size_name: string } | { size_name: string }[] | null
+  prints_name: { official_print_name: string } | { official_print_name: string }[] | null
+}
+
+type BundleReference = {
+  category_code: string | null
   product_code: string
-  name: string
-  product_categories: { category_name: string } | null
-  sizes: { size_name: string } | null
+  name: string | null
+  size: string | null
+  base_price: number | null
+  cost_price: number | null
+  mrp: number | null
+  component_product_code: string | null
+  internal_style_name: string | null
+  component_quantity: number | null
+  component_price: number | null
 }
 
 export function useProductData() {
@@ -39,16 +58,18 @@ export function useProductData() {
   const [individualCategories, setIndividualCategories] = useState<Category[]>([])
   const [sizes, setSizes] = useState<Size[]>([])
   const [products, setProducts] = useState<Product[]>([])
+  const [bundleReferences, setBundleReferences] = useState<BundleReference[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   const fetchData = async () => {
     setIsLoading(true)
     try {
-      const [printsResult, categoriesResult, sizesResult, productsResult] = await Promise.all([
+      const [printsResult, categoriesResult, sizesResult, productsResult, bundleRefsResult] = await Promise.all([
         getPrints(),
         getCategories(),
         getSizes(),
         getProducts(),
+        getBundleReferences(),
       ])
 
       if (printsResult.data) setPrints(printsResult.data)
@@ -66,7 +87,8 @@ export function useProductData() {
         setIndividualCategories(individualCats)
       }
       if (sizesResult.data) setSizes(sizesResult.data)
-      if (productsResult.data) setProducts(productsResult.data)
+      if (productsResult.data) setProducts(productsResult.data as Product[])
+      if (bundleRefsResult.data) setBundleReferences(bundleRefsResult.data as BundleReference[])
     } catch (error) {
       console.error("Error fetching product data:", error)
     } finally {
@@ -106,9 +128,13 @@ export function useProductData() {
 
   const refetchProducts = useCallback(async () => {
     const result = await getProducts()
-    if (result.data) setProducts(result.data)
+    if (result.data) setProducts(result.data as Product[])
   }, [])
 
+  const refetchBundleReferences = useCallback(async () => {
+    const result = await getBundleReferences()
+    if (result.data) setBundleReferences(result.data as BundleReference[])
+  }, [])
 
   return {
     prints,
@@ -117,10 +143,12 @@ export function useProductData() {
     individualCategories,
     sizes,
     products,
+    bundleReferences,
     isLoading,
     refetchPrints,
     refetchCategories,
     refetchSizes,
     refetchProducts,
+    refetchBundleReferences,
   }
 }

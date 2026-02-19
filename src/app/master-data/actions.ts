@@ -529,20 +529,61 @@ export async function createProduct(product: {
 
 export async function getProducts() {
   try {
-    const { data, error } = await supabaseAdmin
-      .from("products")
-      .select("*, product_categories(category_name), sizes(size_name)")
-      .order("name")
+    const BATCH = 1000
+    const all: unknown[] = []
+    let from = 0
 
-    if (error) {
-      console.error("Error fetching products:", error)
-      return { data: null, error: error.message }
+    while (true) {
+      const { data, error } = await supabaseAdmin
+        .from("products")
+        .select("id, product_code, name, color, base_price, cost_price, mrp, product_categories:category_id(category_name, category_code), sizes:size_id(size_name), prints_name:print_id(official_print_name)")
+        .order("product_code")
+        .range(from, from + BATCH - 1)
+
+      if (error) {
+        console.error("Error fetching products:", error)
+        return { data: null, error: error.message }
+      }
+
+      all.push(...(data ?? []))
+      if (!data || data.length < BATCH) break
+      from += BATCH
     }
 
-    return { data, error: null }
+    return { data: all, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
     return { data: null, error: "Unable to load products. Please refresh the page." }
+  }
+}
+
+export async function getBundleReferences() {
+  try {
+    const BATCH = 1000
+    const all: unknown[] = []
+    let from = 0
+
+    while (true) {
+      const { data, error } = await supabaseAdmin
+        .from("bundle_reference")
+        .select("category_code, product_code, name, size, base_price, cost_price, mrp, component_product_code, internal_style_name, component_quantity, component_price")
+        .order("product_code")
+        .range(from, from + BATCH - 1)
+
+      if (error) {
+        console.error("Error fetching bundle references:", error)
+        return { data: null, error: error.message }
+      }
+
+      all.push(...(data ?? []))
+      if (!data || data.length < BATCH) break
+      from += BATCH
+    }
+
+    return { data: all, error: null }
+  } catch (error) {
+    console.error("Unexpected error:", error)
+    return { data: null, error: "Unable to load bundle references. Please refresh the page." }
   }
 }
 

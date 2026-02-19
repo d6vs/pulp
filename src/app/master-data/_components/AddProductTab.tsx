@@ -232,7 +232,7 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
 
   return (
     <>
-      <Card className="border-0 shadow-lg lg:col-span-2">
+      <Card className="border-0 shadow-lg">
         <CardHeader className="border-b bg-white">
           <CardTitle className="text-lg font-semibold">Add New Product</CardTitle>
           <CardDescription className="text-sm">Create a new product with SKU</CardDescription>

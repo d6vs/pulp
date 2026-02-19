@@ -9,7 +9,8 @@ import { AddCategoryTab } from "./_components/AddCategoryTab"
 import { AddSizeTab } from "./_components/AddSizeTab"
 import { UpdateWeightTab } from "./_components/UpdateWeightTab"
 import { AddProductTab } from "./_components/AddProductTab"
-import { AddBundleTab } from "./_components/AddBundleTab"
+import { ExistingProductsList } from "./_components/ExistingProductsList"
+import { ExistingBundlesList } from "./_components/ExistingBundlesList"
 
 type TabType = "print" | "category" | "size" | "weight" | "product" | "bundle"
 
@@ -19,7 +20,7 @@ const TABS = [
   { id: "size" as TabType, label: "Add Size", icon: Ruler },
   { id: "weight" as TabType, label: "Add Weight", icon: Weight },
   { id: "product" as TabType, label: "Add Product", icon: ShoppingBag },
-  { id: "bundle" as TabType, label: "Create Bundle", icon: Boxes },
+  { id: "bundle" as TabType, label: "Bundles", icon: Boxes },
 ]
 
 export default function ProductSetupPage() {
@@ -27,9 +28,9 @@ export default function ProductSetupPage() {
   const {
     prints,
     categories,
-    bundleCategories,
-    individualCategories,
     sizes,
+    products,
+    bundleReferences,
     isLoading,
     refetchPrints,
     refetchCategories,
@@ -83,20 +84,21 @@ export default function ProductSetupPage() {
           )}
 
           {activeTab === "product" && (
-            <AddProductTab
-              categories={categories}
-              prints={prints}
-              sizes={sizes}
-              onProductAdded={refetchProducts}
-            />
+            <div className="lg:col-span-2 space-y-6">
+              <AddProductTab
+                categories={categories}
+                prints={prints}
+                sizes={sizes}
+                onProductAdded={refetchProducts}
+              />
+              <ExistingProductsList products={products} />
+            </div>
           )}
 
           {activeTab === "bundle" && (
-            <AddBundleTab
-              bundleCategories={bundleCategories}
-              individualCategories={individualCategories}
-              onBundleAdded={refetchCategories}
-            />
+            <div className="lg:col-span-2">
+              <ExistingBundlesList bundles={bundleReferences} />
+            </div>
           )}
         </div>
       </div>

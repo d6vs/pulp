@@ -340,7 +340,7 @@ export function AddBundleTab({
   }
 
   return (
-    <Card className="col-span-2">
+    <Card>
       <CardHeader>
         <CardTitle>Create Bundle</CardTitle>
         <CardDescription>
