@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx --env-file=.env src/scripts/seed.ts",
+    "seed:products": "tsx --env-file=.env src/scripts/seedProducts.ts",
     "seed:bundle-reference": "tsx --env-file=.env src/scripts/seedBundleReference.ts"
   },
   "dependencies": {

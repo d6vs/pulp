@@ -69,7 +69,7 @@ export function ItemDetailsForm({ categories, onItemsAdded }: ItemDetailsFormPro
 
     if (selectedCategory && print) {
       setIsLoadingSizes(true)
-      const sizesResult = await getSizesByCategoryAndPrint(selectedCategory.id, [print.id])
+      const sizesResult = await getSizesByCategoryAndPrint(selectedCategory.id, print.id)
       if (sizesResult.data) setSizes(sizesResult.data)
       setIsLoadingSizes(false)
     }

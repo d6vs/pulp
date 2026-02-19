@@ -231,7 +231,7 @@ export function AddBundleTab({
     setSelectedFinalSizes([])
 
     if (category && print) {
-      const sizesResult = await getSizesByCategoryAndPrint(category.id, [print.id])
+      const sizesResult = await getSizesByCategoryAndPrint(category.id, print.id)
       updateBundleProduct(productId, {
         sizes: sizesResult.data || [],
         isLoadingSizes: false,

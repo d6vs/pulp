@@ -60,37 +60,28 @@ async function findProductByCategoryAndSizeName(
     .select("id, product_code, cost_price, mrp, base_price, length_mm, width_mm, height_mm, brand, size_id")
     .eq("category_id", categoryId)
     .eq("size_id", sizeId)
+    .eq("print_id", printId)
 
   if (productsError || !products || products.length === 0) {
     return { product: null, sizeId }
   }
 
-  for (const prod of products) {
-    const { data: productPrints } = await supabaseAdmin
-      .from("product_prints")
-      .select("print_id")
-      .eq("product_id", prod.id)
-
-    if (productPrints?.some((pp) => pp.print_id === printId)) {
-      return {
-        product: {
-          id: prod.id,
-          product_code: prod.product_code ?? null,
-          cost_price: prod.cost_price,
-          mrp: prod.mrp,
-          base_price: prod.base_price,
-          length_mm: prod.length_mm,
-          width_mm: prod.width_mm,
-          height_mm: prod.height_mm,
-          brand: prod.brand,
-          size_id: prod.size_id,
-        },
-        sizeId: prod.size_id,
-      }
-    }
+  const prod = products[0]
+  return {
+    product: {
+      id: prod.id,
+      product_code: prod.product_code ?? null,
+      cost_price: prod.cost_price,
+      mrp: prod.mrp,
+      base_price: prod.base_price,
+      length_mm: prod.length_mm,
+      width_mm: prod.width_mm,
+      height_mm: prod.height_mm,
+      brand: prod.brand,
+      size_id: prod.size_id,
+    },
+    sizeId: prod.size_id,
   }
-
-  return { product: null, sizeId }
 }
 
 // ============================================

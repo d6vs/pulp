@@ -28,6 +28,7 @@ export async function generateItemMaster(
         .select("id, product_code, name, color, hsn_code, cost_price, base_price, mrp, material")
         .eq("category_id", categoryId)
         .eq("size_id", sizeId)
+        .eq("print_id", printId)
 
       if (productsError) {
         console.error(`[ItemMaster] DB error for category=${categoryId}, size=${sizeId}:`, productsError.message)
@@ -36,35 +37,12 @@ export async function generateItemMaster(
       }
 
       if (!products || products.length === 0) {
-        console.error(`[ItemMaster] No products found for category=${categoryId}, size=${sizeId}`)
-        results.push({ productCode: "", error: `No product found for this category/size combination` })
+        console.error(`[ItemMaster] No product found for category=${categoryId}, size=${sizeId}, print=${printId}`)
+        results.push({ productCode: "", error: `No product found for this category/print/size combination` })
         continue
       }
 
-      console.log(`[ItemMaster] Found ${products.length} product(s) for category=${categoryId}, size=${sizeId}. Looking for print=${printId}`)
-
-      // Find the product that has the matching print
-      let matchedProduct = null
-      for (const product of products) {
-        const { data: productPrints } = await supabaseAdmin
-          .from("product_prints")
-          .select("print_id")
-          .eq("product_id", product.id)
-
-        console.log(`[ItemMaster] Product ${product.id} (${product.product_code}) has prints:`, productPrints?.map((pp) => pp.print_id))
-
-        const hasPrint = productPrints?.some((pp) => pp.print_id === printId)
-        if (hasPrint) {
-          matchedProduct = product
-          break
-        }
-      }
-
-      if (!matchedProduct) {
-        console.error(`[ItemMaster] No product matched print=${printId} among ${products.length} product(s)`)
-        results.push({ productCode: "", error: `No product found matching this print` })
-        continue
-      }
+      const matchedProduct = products[0]
 
       // Get size name
       const { data: sizeData } = await supabaseAdmin

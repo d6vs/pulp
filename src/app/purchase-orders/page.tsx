@@ -79,8 +79,7 @@ export default function PurchaseOrdersPage() {
 
     if (selectedCategory && newPrints.length > 0) {
       setIsLoadingSizes(true)
-      const printIds = newPrints.map((p) => p.id)
-      const sizesResult = await getSizesByCategoryAndPrint(selectedCategory.id, printIds)
+      const sizesResult = await getSizesByCategoryAndPrint(selectedCategory.id, newPrints[0].id)
       if (sizesResult.data) {
         setFilteredSizes(sizesResult.data)
       }
@@ -100,8 +99,7 @@ export default function PurchaseOrdersPage() {
 
     if (selectedCategory && newPrints.length > 0) {
       setIsLoadingSizes(true)
-      const printIds = newPrints.map((p) => p.id)
-      const sizesResult = await getSizesByCategoryAndPrint(selectedCategory.id, printIds)
+      const sizesResult = await getSizesByCategoryAndPrint(selectedCategory.id, newPrints[0].id)
       if (sizesResult.data) {
         setFilteredSizes(sizesResult.data)
       }
@@ -129,8 +127,7 @@ export default function PurchaseOrdersPage() {
       let sku: string | null = null
       let costPrice: number = 0
       if (selectedCategory && selectedPrints.length > 0) {
-        const printIds = selectedPrints.map((p) => p.id)
-        const skuResult = await getProductSKU(selectedCategory.id, printIds, sizeId)
+        const skuResult = await getProductSKU(selectedCategory.id, selectedPrints[0].id, sizeId)
         sku = skuResult.data?.sku || null
         costPrice = skuResult.data?.cost_price || 0
       }

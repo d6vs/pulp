@@ -242,11 +242,11 @@ export async function getPrints() {
 
 export async function getPrintsByCategory(categoryId: string) {
   try {
-    // Single query: products → product_prints → prints_name (all joins done by DB)
     const { data: products, error } = await supabaseAdmin
       .from("products")
-      .select("product_prints(prints_name(id, official_print_name, print_code, color))")
+      .select("prints_name:print_id(id, official_print_name, print_code, color)")
       .eq("category_id", categoryId)
+      .not("print_id", "is", null)
 
     if (error) {
       console.error("Error fetching prints:", error)
@@ -257,18 +257,14 @@ export async function getPrintsByCategory(categoryId: string) {
       return { data: [], error: null }
     }
 
-    // Flatten and deduplicate prints across all products
+    // Deduplicate prints across all products
     type PrintRecord = { id: string; official_print_name: string; print_code: string | null; color: string | null }
     const printMap = new Map<string, PrintRecord>()
     for (const product of products) {
-      for (const pp of product.product_prints || []) {
-        const printData = pp.prints_name
-        const prints = Array.isArray(printData) ? printData : printData ? [printData] : []
-        for (const print of prints as PrintRecord[]) {
-          if (print && !printMap.has(print.id)) {
-            printMap.set(print.id, print)
-          }
-        }
+      const printData = product.prints_name
+      const print = Array.isArray(printData) ? printData[0] : printData
+      if (print && !printMap.has((print as PrintRecord).id)) {
+        printMap.set((print as PrintRecord).id, print as PrintRecord)
       }
     }
 
@@ -328,17 +324,17 @@ export async function getSizesByCategory(categoryId: string) {
   }
 }
 
-export async function getSizesByCategoryAndPrint(categoryId: string, printIds: string[]) {
+export async function getSizesByCategoryAndPrint(categoryId: string, printId: string) {
   try {
-    if (!printIds || printIds.length === 0) {
+    if (!printId) {
       return { data: [], error: null }
     }
 
-    // Single query: products → sizes + product_prints (all joins done by DB)
     const { data: products, error } = await supabaseAdmin
       .from("products")
-      .select("size_id, sizes(id, size_name), product_prints(print_id)")
+      .select("size_id, sizes(id, size_name)")
       .eq("category_id", categoryId)
+      .eq("print_id", printId)
       .not("size_id", "is", null)
 
     if (error) {
@@ -350,21 +346,15 @@ export async function getSizesByCategoryAndPrint(categoryId: string, printIds: s
       return { data: [], error: null }
     }
 
-    // Filter products that have ALL selected prints, then collect their sizes
     type SizeRecord = { id: string; size_name: string }
     const sizeMap = new Map<string, SizeRecord>()
 
     for (const product of products) {
-      const productPrintIds = new Set((product.product_prints || []).map((pp) => pp.print_id))
-      const hasAllPrints = printIds.every((id) => productPrintIds.has(id))
-
-      if (hasAllPrints) {
-        const sizeData = product.sizes
-        const sizes = Array.isArray(sizeData) ? sizeData : sizeData ? [sizeData] : []
-        for (const size of sizes as SizeRecord[]) {
-          if (size && !sizeMap.has(size.id)) {
-            sizeMap.set(size.id, size)
-          }
+      const sizeData = product.sizes
+      const sizes = Array.isArray(sizeData) ? sizeData : sizeData ? [sizeData] : []
+      for (const size of sizes as SizeRecord[]) {
+        if (size && !sizeMap.has(size.id)) {
+          sizeMap.set(size.id, size)
         }
       }
     }
@@ -378,13 +368,14 @@ export async function getSizesByCategoryAndPrint(categoryId: string, printIds: s
   }
 }
 
-export async function getProductSKU(categoryId: string, printIds: string[], sizeId: string | null) {
+export async function getProductSKU(categoryId: string, printId: string, sizeId: string | null) {
   try {
-    // Build query to find a product matching category, size, and prints
+    // Build query to find a product matching category, size, and print
     let query = supabaseAdmin
       .from("products")
-      .select("id, product_code, cost_price")
+      .select("product_code, cost_price")
       .eq("category_id", categoryId)
+      .eq("print_id", printId)
 
     if (sizeId) {
       query = query.eq("size_id", sizeId)
@@ -403,48 +394,8 @@ export async function getProductSKU(categoryId: string, printIds: string[], size
       return { data: null, error: null }
     }
 
-    const productIds = products.map((p) => p.id)
-
-    // Fetch product_prints in chunks to avoid header overflow
-    const CHUNK_SIZE = 50
-    const productPrintsMap = new Map<string, string[]>()
-
-    for (let i = 0; i < productIds.length; i += CHUNK_SIZE) {
-      const chunk = productIds.slice(i, i + CHUNK_SIZE)
-      const { data: chunkProductPrints, error: ppError } = await supabaseAdmin
-        .from("product_prints")
-        .select("product_id, print_id, position")
-        .in("product_id", chunk)
-        .order("position")
-
-      if (ppError) {
-        console.error("Error fetching product prints:", ppError)
-        return { data: null, error: ppError.message }
-      }
-
-      // Build a map of product_id -> ordered print_ids
-      for (const pp of chunkProductPrints || []) {
-        if (!productPrintsMap.has(pp.product_id)) {
-          productPrintsMap.set(pp.product_id, [])
-        }
-        productPrintsMap.get(pp.product_id)!.push(pp.print_id)
-      }
-    }
-
-    // Find product with matching prints
-    for (const product of products) {
-      const productPrintIds = productPrintsMap.get(product.id) || []
-
-      // Check if arrays match (same prints in same order for bundles, or same single print)
-      if (
-        productPrintIds.length === printIds.length &&
-        productPrintIds.every((id, index) => id === printIds[index])
-      ) {
-        return { data: { sku: product.product_code, cost_price: product.cost_price }, error: null }
-      }
-    }
-
-    return { data: null, error: null }
+    const product = products[0]
+    return { data: { sku: product.product_code, cost_price: product.cost_price }, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
     return { data: null, error: "Failed to fetch product SKU" }

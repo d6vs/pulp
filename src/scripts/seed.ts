@@ -9,9 +9,6 @@ async function deleteAllData() {
   console.log("🗑️  Deleting all existing data...\n")
 
   // Delete in reverse order to respect foreign key constraints
-  console.log("  Deleting product_prints...")
-  await supabaseAdmin.from("product_prints").delete().neq("id", "00000000-0000-0000-0000-000000000000")
-
   console.log("  Deleting products...")
   await supabaseAdmin.from("products").delete().neq("id", "00000000-0000-0000-0000-000000000000")
 

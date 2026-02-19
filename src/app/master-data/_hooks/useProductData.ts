@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
 import { getPrints, getCategories, getSizes, getProducts } from "../actions"
-import { useRealtimeSubscription, useRefreshOnFocus } from "@/hooks/useRealtimeSubscription"
 
 type Print = {
   id: string
@@ -110,29 +109,6 @@ export function useProductData() {
     if (result.data) setProducts(result.data)
   }, [])
 
-  // Real-time subscriptions: auto-refresh when data changes
-  useRealtimeSubscription({
-    table: "prints_name",
-    onAnyChange: refetchPrints,
-  })
-
-  useRealtimeSubscription({
-    table: "product_categories",
-    onAnyChange: refetchCategories,
-  })
-
-  useRealtimeSubscription({
-    table: "sizes",
-    onAnyChange: refetchSizes,
-  })
-
-  useRealtimeSubscription({
-    table: "products",
-    onAnyChange: refetchProducts,
-  })
-
-  // Also refresh when user returns to this tab
-  useRefreshOnFocus(fetchData)
 
   return {
     prints,

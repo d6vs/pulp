@@ -201,25 +201,10 @@ export async function deleteCategory(id: string, forceDelete: boolean = false) {
 
     // If force delete, remove products first
     if (forceDelete && count > 0) {
-      // First delete product_prints for products in this category
-      const { data: products } = await supabaseAdmin
+      await supabaseAdmin
         .from("products")
-        .select("id")
+        .delete()
         .eq("category_id", id)
-
-      if (products && products.length > 0) {
-        const productIds = products.map(p => p.id)
-        await supabaseAdmin
-          .from("product_prints")
-          .delete()
-          .in("product_id", productIds)
-
-        // Then delete products
-        await supabaseAdmin
-          .from("products")
-          .delete()
-          .eq("category_id", id)
-      }
     }
 
     // Now delete the category
@@ -364,7 +349,7 @@ export async function updatePrint(id: string, print: {
 export async function getPrintProductCount(printId: string) {
   try {
     const { count, error } = await supabaseAdmin
-      .from("product_prints")
+      .from("products")
       .select("id", { count: "exact", head: true })
       .eq("print_id", printId)
 
@@ -392,29 +377,12 @@ export async function deletePrint(id: string, forceDelete: boolean = false) {
       }
     }
 
-    // If force delete, remove product_prints entries first (and their products)
+    // If force delete, remove products using this print
     if (forceDelete && count > 0) {
-      // Get products using this print
-      const { data: productPrints } = await supabaseAdmin
-        .from("product_prints")
-        .select("product_id")
+      await supabaseAdmin
+        .from("products")
+        .delete()
         .eq("print_id", id)
-
-      if (productPrints && productPrints.length > 0) {
-        const productIds = [...new Set(productPrints.map(pp => pp.product_id))]
-
-        // Delete all product_prints for these products
-        await supabaseAdmin
-          .from("product_prints")
-          .delete()
-          .in("product_id", productIds)
-
-        // Delete the products themselves
-        await supabaseAdmin
-          .from("products")
-          .delete()
-          .in("id", productIds)
-      }
     }
 
     // Now delete the print
@@ -502,6 +470,7 @@ export async function createSize(size: {
 export async function createProduct(product: {
   category_id: string
   size_id: string | null
+  print_id: string | null
   product_code: string
   name: string
   base_price: number | null
@@ -511,7 +480,7 @@ export async function createProduct(product: {
   material: string | null
   color: string | null
   brand: string | null
-}, printIds: string[]) {
+}) {
   try {
     // Check for duplicate SKU
     const { data: existing } = await supabaseAdmin
@@ -539,7 +508,7 @@ export async function createProduct(product: {
       }
     }
 
-    // Insert product
+    // Insert product with print_id directly
     const { data, error } = await supabaseAdmin
       .from("products")
       .insert([{ ...product, weight_id }])
@@ -549,24 +518,6 @@ export async function createProduct(product: {
     if (error) {
       console.error("Error creating product:", error)
       return { data: null, error: error.message }
-    }
-
-    // Insert product_prints
-    if (printIds.length > 0) {
-      const productPrints = printIds.map((printId, index) => ({
-        product_id: data.id,
-        print_id: printId,
-        position: index + 1,
-      }))
-
-      const { error: ppError } = await supabaseAdmin
-        .from("product_prints")
-        .insert(productPrints)
-
-      if (ppError) {
-        console.error("Error linking prints:", ppError)
-        return { data, error: `Product created but failed to link prints: ${ppError.message}` }
-      }
     }
 
     return { data, error: null }

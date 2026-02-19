@@ -56,13 +56,14 @@ export async function seedProducts() {
     // Find weight by category_id + size_id
     const weight = weights.find((w) => w.category_id === category.id && w.size_id === size.id)
 
-    // Insert product
-    const { data: product, error } = await supabaseAdmin
+    // Insert product with print_id directly
+    const { error } = await supabaseAdmin
       .from("products")
       .upsert(
         {
           category_id: category.id,
           size_id: size.id,
+          print_id: print.id,
           weight_id: weight?.id || null,
           product_code: row["Product Code"],
           name: row["Name"],
@@ -82,29 +83,11 @@ export async function seedProducts() {
         },
         { onConflict: "product_code" }
       )
-      .select("id")
-      .single()
 
     if (error) {
       console.error(`❌ Error inserting "${row["Product Code"]}":`, error.message)
       errorCount++
       continue
-    }
-
-    // Insert product_prints entry
-    const { error: printError } = await supabaseAdmin
-      .from("product_prints")
-      .upsert(
-        {
-          product_id: product.id,
-          print_id: print.id,
-          position: 1,
-        },
-        { onConflict: "product_id,print_id,position" }
-      )
-
-    if (printError) {
-      console.error(`❌ Error linking print for "${row["Product Code"]}":`, printError.message)
     }
 
     successCount++
