@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { useDownloadHistory } from "@/hooks/useDownloadHistory"
+import { DownloadHistoryPanel } from "@/components/ui/download-history-panel"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -28,9 +30,10 @@ interface ItemMasterTableProps {
 }
 
 export function ItemMasterTable({ itemMasterData, selectedDate, onDataChanged }: ItemMasterTableProps) {
+  const { history, addEntry, clearHistory } = useDownloadHistory("download-history")
   const [isDeleting, setIsDeleting] = useState(false)
   console.log("Rendering ItemMasterTable with data:", itemMasterData)
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (itemMasterData.length === 0) {
       toast.error("No data to download")
       return
@@ -44,6 +47,19 @@ export function ItemMasterTable({ itemMasterData, selectedDate, onDataChanged }:
       filename: `Item_Master_${selectedDate}.csv`,
       sheetName: "Item Master",
     })
+
+    addEntry({
+      filename: `Item_Master_${selectedDate}.csv`,
+      description: `Item Master • ${selectedDate}`,
+      rowCount: itemMasterData.length,
+    })
+
+    const result = await deleteItemMasterByDate(selectedDate)
+    if (result.error) {
+      toast.error(`Download succeeded but failed to clear items: ${result.error}`)
+    } else {
+      await onDataChanged()
+    }
   }
 
   const handleDeleteAll = async () => {
@@ -65,6 +81,7 @@ export function ItemMasterTable({ itemMasterData, selectedDate, onDataChanged }:
   }
 
   return (
+    <>
     <Card className="border-0 shadow-lg min-w-0 max-w-full overflow-hidden">
       <CardHeader className="border-b bg-white flex flex-row items-center justify-between">
         <div>
@@ -162,5 +179,7 @@ export function ItemMasterTable({ itemMasterData, selectedDate, onDataChanged }:
         )}
       </CardContent>
     </Card>
+    <DownloadHistoryPanel history={history} onClear={clearHistory} />
+    </>
   )
 }

@@ -36,6 +36,7 @@ export default function ProductSetupPage() {
     refetchCategories,
     refetchSizes,
     refetchProducts,
+    refetchBundleReferences,
   } = useProductData()
 
   if (isLoading) {
@@ -91,13 +92,13 @@ export default function ProductSetupPage() {
                 sizes={sizes}
                 onProductAdded={refetchProducts}
               />
-              <ExistingProductsList products={products} />
+              <ExistingProductsList products={products} onDeleted={refetchProducts} />
             </div>
           )}
 
           {activeTab === "bundle" && (
             <div className="lg:col-span-2">
-              <ExistingBundlesList bundles={bundleReferences} />
+              <ExistingBundlesList bundles={bundleReferences} onDeleted={refetchBundleReferences} />
             </div>
           )}
         </div>

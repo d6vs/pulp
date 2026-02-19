@@ -566,7 +566,7 @@ export async function getBundleReferences() {
     while (true) {
       const { data, error } = await supabaseAdmin
         .from("bundle_reference")
-        .select("category_code, product_code, name, size, base_price, cost_price, mrp, component_product_code, internal_style_name, component_quantity, component_price")
+        .select("id, category_code, product_code, name, size, base_price, cost_price, mrp, component_product_code, internal_style_name, component_quantity, component_price")
         .order("product_code")
         .range(from, from + BATCH - 1)
 
@@ -584,6 +584,42 @@ export async function getBundleReferences() {
   } catch (error) {
     console.error("Unexpected error:", error)
     return { data: null, error: "Unable to load bundle references. Please refresh the page." }
+  }
+}
+
+export async function deleteProduct(id: string) {
+  try {
+    const { error } = await supabaseAdmin
+      .from("products")
+      .delete()
+      .eq("id", id)
+
+    if (error) {
+      console.error("Error deleting product:", error)
+      return { error: error.message }
+    }
+    return { error: null }
+  } catch (error) {
+    console.error("Unexpected error:", error)
+    return { error: "Unable to delete product. Please try again." }
+  }
+}
+
+export async function deleteBundleReference(id: string) {
+  try {
+    const { error } = await supabaseAdmin
+      .from("bundle_reference")
+      .delete()
+      .eq("id", id)
+
+    if (error) {
+      console.error("Error deleting bundle reference:", error)
+      return { error: error.message }
+    }
+    return { error: null }
+  } catch (error) {
+    console.error("Unexpected error:", error)
+    return { error: "Unable to delete bundle reference. Please try again." }
   }
 }
 

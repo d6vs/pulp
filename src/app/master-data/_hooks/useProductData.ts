@@ -38,6 +38,7 @@ type Product = {
 }
 
 type BundleReference = {
+  id: string
   category_code: string | null
   product_code: string
   name: string | null

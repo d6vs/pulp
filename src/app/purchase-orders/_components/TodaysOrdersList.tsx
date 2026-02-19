@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { useDownloadHistory } from "@/hooks/useDownloadHistory"
+import { DownloadHistoryPanel } from "@/components/ui/download-history-panel"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -39,6 +41,7 @@ export function TodaysOrdersList({
   selectedDate,
   onRefetch,
 }: TodaysOrdersListProps) {
+  const { history, addEntry, clearHistory } = useDownloadHistory("download-history")
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState({
     categoryInput: "",
@@ -150,7 +153,7 @@ export function TodaysOrdersList({
     )
   }
 
-  const handleDownloadXLSX = () => {
+  const handleDownloadXLSX = async () => {
     if (purchaseOrders.length === 0) {
       toast.error("No orders to download")
       return
@@ -169,9 +172,23 @@ export function TodaysOrdersList({
       filename: `purchase_orders_${selectedDate}.csv`,
       sheetName: "Purchase Orders",
     })
+
+    addEntry({
+      filename: `purchase_orders_${selectedDate}.csv`,
+      description: `Purchase Orders • ${selectedDate}`,
+      rowCount: purchaseOrders.length,
+    })
+
+    const result = await deletePurchaseOrdersByDate(selectedDate)
+    if (result.error) {
+      toast.error(`Download succeeded but failed to clear orders: ${result.error}`)
+    } else {
+      onRefetch()
+    }
   }
 
   return (
+    <>
     <Card className="border-0 shadow-lg">
       <CardHeader className="border-b bg-white">
         <div className="flex items-center justify-between">
@@ -413,5 +430,7 @@ export function TodaysOrdersList({
         )}
       </CardContent>
     </Card>
+    <DownloadHistoryPanel history={history} onClear={clearHistory} />
+    </>
   )
 }

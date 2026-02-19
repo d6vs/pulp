@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { useDownloadHistory } from "@/hooks/useDownloadHistory"
+import { DownloadHistoryPanel } from "@/components/ui/download-history-panel"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -83,6 +85,7 @@ export function BundleItemMasterTable({
   selectedDate,
   onDataChanged,
 }: BundleItemMasterTableProps) {
+  const { history, addEntry, clearHistory } = useDownloadHistory("download-history")
   const [isDeleting, setIsDeleting] = useState(false)
 
   const handleDeleteAll = async () => {
@@ -103,7 +106,7 @@ export function BundleItemMasterTable({
     }
   }
 
-  const handleDownloadXLSX = () => {
+  const handleDownloadXLSX = async () => {
     if (bundleItemMasterData.length === 0) {
       toast.error("No data to download")
       return
@@ -162,9 +165,23 @@ export function BundleItemMasterTable({
       filename: `bundle_item_master_${selectedDate}.csv`,
       sheetName: "Bundle Item Master",
     })
+
+    addEntry({
+      filename: `bundle_item_master_${selectedDate}.csv`,
+      description: `Bundle Item Master • ${selectedDate}`,
+      rowCount: bundleItemMasterData.length,
+    })
+
+    const result = await deleteBundleItemMasterByDate(selectedDate)
+    if (result.error) {
+      toast.error(`Download succeeded but failed to clear items: ${result.error}`)
+    } else {
+      await onDataChanged()
+    }
   }
 
   return (
+    <>
     <Card className="border-0 shadow-lg">
       <CardHeader className="border-b bg-white">
         <div className="flex items-center justify-between">
@@ -334,5 +351,7 @@ export function BundleItemMasterTable({
         )}
       </CardContent>
     </Card>
+    <DownloadHistoryPanel history={history} onClear={clearHistory} />
+    </>
   )
 }
