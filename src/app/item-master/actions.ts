@@ -8,7 +8,7 @@ const FIXED_DEFAULTS = {
   width_mm: 180,
   height_mm: 20,
   isbn: "1",
-  brand: "Orange Sugars",
+  brand: "Orange Sugar",
 }
 
 export async function generateItemMaster(
