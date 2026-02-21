@@ -159,7 +159,7 @@ export function TodaysOrdersList({
       return
     }
 
-    const headers = ["Item SKU code", "Qty", "Unit Price", "Discount%", "Tax Class"]
+    const headers = ["Item SKU Code", "Qty", "Unit Price", "Discount %", "Tax Class"]
     const rows = purchaseOrders.map((order) => [
       order.sku,
       order.quantity,
