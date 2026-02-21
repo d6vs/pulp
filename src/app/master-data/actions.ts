@@ -101,12 +101,19 @@ export async function createCategory(category: {
 
     if (error) {
       console.error("Error creating category:", error)
+      if (error.message?.includes("duplicate key") || error.message?.includes("unique constraint")) {
+        return { data: null, error: "Category already exists" }
+      }
       return { data: null, error: error.message }
     }
 
     return { data, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    if (errorMessage.includes("fetch failed") || errorMessage.includes("TypeError")) {
+      return { data: null, error: "Unable to create category. Please check your connection and try again." }
+    }
     return { data: null, error: "Unable to create category. Please try again." }
   }
 }
@@ -287,12 +294,19 @@ export async function createPrint(print: {
 
     if (error) {
       console.error("Error creating print:", error)
+      if (error.message?.includes("duplicate key") || error.message?.includes("unique constraint")) {
+        return { data: null, error: "Print already exists" }
+      }
       return { data: null, error: error.message }
     }
 
     return { data, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    if (errorMessage.includes("fetch failed") || errorMessage.includes("TypeError")) {
+      return { data: null, error: "Unable to create print. Please check your connection and try again." }
+    }
     return { data: null, error: "Unable to create print. Please try again." }
   }
 }
@@ -453,12 +467,19 @@ export async function createSize(size: {
 
     if (error) {
       console.error("Error creating size:", error)
+      if (error.message?.includes("duplicate key") || error.message?.includes("unique constraint")) {
+        return { data: null, error: "Size already exists" }
+      }
       return { data: null, error: error.message }
     }
 
     return { data, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    if (errorMessage.includes("fetch failed") || errorMessage.includes("TypeError")) {
+      return { data: null, error: "Unable to create size. Please check your connection and try again." }
+    }
     return { data: null, error: "Unable to create size. Please try again." }
   }
 }
@@ -517,12 +538,21 @@ export async function createProduct(product: {
 
     if (error) {
       console.error("Error creating product:", error)
+      // Check for duplicate key constraint violation
+      if (error.message?.includes("duplicate key") || error.message?.includes("unique constraint")) {
+        return { data: null, error: "Product already exists" }
+      }
       return { data: null, error: error.message }
     }
 
     return { data, error: null }
   } catch (error) {
     console.error("Unexpected error:", error)
+    // Don't show technical errors like "TypeError: fetch failed"
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    if (errorMessage.includes("fetch failed") || errorMessage.includes("TypeError")) {
+      return { data: null, error: "Unable to create product. Please check your connection and try again." }
+    }
     return { data: null, error: "Unable to create product. Please try again." }
   }
 }

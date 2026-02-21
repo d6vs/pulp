@@ -5,9 +5,17 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { AutocompleteInput } from "@/components/ui/autocomplete-input"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Plus, Loader2, X, ChevronDown, ChevronUp, Minus } from "lucide-react"
 import { toast } from "sonner"
-import { addBundlesToItemMasterFromReference, checkBundleExistsInReference, BundleReferenceData } from "../actions"
+import { addBundlesToItemMasterFromReference, checkBundleExistsInReference, generateBundleItemMaster, BundleReferenceData } from "../actions"
 import { getPrintsByCategory, getSizesByCategoryAndPrint } from "@/app/purchase-orders/actions"
 
 type Category = {
@@ -78,6 +86,27 @@ export function BundleDetailsForm({
   const [missingBundles, setMissingBundles] = useState<string[]>([])
   const [existingBundles, setExistingBundles] = useState<BundleReferenceData[]>([])
 
+  // Bundle creation configuration (for missing bundles)
+  const [selectedPrintsForName, setSelectedPrintsForName] = useState<string[]>([])
+  const [selectedPrintsForSKU, setSelectedPrintsForSKU] = useState<string[]>([])
+
+  // Get unique prints from selected products
+  const uniquePrints = useMemo(() => {
+    const productsWithPrints = bundleProducts.filter((p) => p.print !== null)
+    const prints = new Map<string, { code: string; name: string }>()
+
+    productsWithPrints.forEach((p) => {
+      if (p.print && p.print.print_code) {
+        prints.set(p.print.print_code, {
+          code: p.print.print_code,
+          name: p.print.official_print_name,
+        })
+      }
+    })
+
+    return Array.from(prints.values())
+  }, [bundleProducts])
+
   // Calculate intersection of sizes from all products
   const finalSizesOptions = useMemo(() => {
     const productsWithSizes = bundleProducts.filter((p) => p.sizes.length > 0)
@@ -142,6 +171,13 @@ export function BundleDetailsForm({
       setHasCheckedReference(true)
       setMissingBundles(result.missingBundles || [])
       setExistingBundles(result.existingBundles || [])
+
+      // Initialize print selections with all prints if there are missing bundles
+      if ((result.missingBundles || []).length > 0) {
+        const allPrintCodes = uniquePrints.map((p) => p.code)
+        setSelectedPrintsForName(allPrintCodes)
+        setSelectedPrintsForSKU(allPrintCodes)
+      }
     } catch (error) {
       console.error("Error checking bundle reference:", error)
       setHasCheckedReference(false)
@@ -157,6 +193,8 @@ export function BundleDetailsForm({
     setHasCheckedReference(false)
     setMissingBundles([])
     setExistingBundles([])
+    setSelectedPrintsForName([])
+    setSelectedPrintsForSKU([])
   }, [selectedBundleCategory, bundleProducts, finalSizesOptions])
 
   const handleOpenBundleSection = () => {
@@ -172,6 +210,8 @@ export function BundleDetailsForm({
     setHasCheckedReference(false)
     setMissingBundles([])
     setExistingBundles([])
+    setSelectedPrintsForName([])
+    setSelectedPrintsForSKU([])
   }
 
   const handleBundleCategorySelect = (category: Category | null) => {
@@ -277,6 +317,18 @@ export function BundleDetailsForm({
       return
     }
 
+    // Validate print selections if there are missing bundles
+    if (hasCheckedReference && missingBundles.length > 0) {
+      if (selectedPrintsForName.length === 0) {
+        toast.error("Please select at least one print for the bundle name")
+        return
+      }
+      if (selectedPrintsForSKU.length === 0) {
+        toast.error("Please select at least one print for the bundle SKU")
+        return
+      }
+    }
+
     setIsSubmitting(true)
     try {
       const individualProducts = productsWithPrints.map((p) => ({
@@ -290,45 +342,72 @@ export function BundleDetailsForm({
 
       const selectedSizeNames = selectedFinalSizes.map((s) => s.size_name)
 
-      // Use existing reference data if already checked, otherwise auto-check
-      let bundlesToAdd = existingBundles.filter((b) => selectedSizeNames.includes(b.sizeName))
+      // Check which bundles exist in reference
+      const checkProducts = productsWithPrints.map((p) => ({
+        categoryName: p.category!.category_name,
+        categoryCode: p.category!.category_code || "",
+        printName: p.print!.official_print_name,
+        printCode: p.print!.print_code || "",
+      }))
 
-      if (bundlesToAdd.length === 0) {
-        const checkProducts = productsWithPrints.map((p) => ({
-          categoryName: p.category!.category_name,
-          categoryCode: p.category!.category_code || "",
-          printName: p.print!.official_print_name,
-          printCode: p.print!.print_code || "",
-        }))
+      const checkResult = await checkBundleExistsInReference(
+        selectedBundleCategory.category_name,
+        checkProducts,
+        selectedSizeNames
+      )
 
-        const checkResult = await checkBundleExistsInReference(
-          selectedBundleCategory.category_name,
-          checkProducts,
-          selectedSizeNames
+      let totalAdded = 0
+      let totalErrors = 0
+
+      // If some bundles exist in reference, add them
+      if (checkResult.existingBundles.length > 0) {
+        const result = await addBundlesToItemMasterFromReference(
+          checkResult.existingBundles,
+          individualProducts,
+          selectedBundleCategory.id
         )
 
-        if (!checkResult.exists || checkResult.existingBundles.length === 0) {
-          const missing = checkResult.missingBundles?.join(", ") || "unknown"
-          toast.error(`Bundle not found in reference: ${missing}. Create it first in Product Setup.`)
+        if (result.error) {
+          toast.error(result.error)
           setIsSubmitting(false)
           return
         }
 
-        bundlesToAdd = checkResult.existingBundles
-        setHasCheckedReference(true)
-        setExistingBundles(checkResult.existingBundles)
+        totalAdded += result.addedToMasterCount || 0
+        totalErrors += result.errorCount || 0
       }
 
-      const result = await addBundlesToItemMasterFromReference(bundlesToAdd, individualProducts, selectedBundleCategory.id)
+      // If some bundles are missing, create them in reference AND add to item master
+      if (checkResult.missingBundles.length > 0) {
+        // Extract size names from missing bundles
+        const missingSizeNames = checkResult.missingBundles.map((bundle) => {
+          const parts = bundle.split(" | ")
+          return parts[parts.length - 1]
+        })
 
-      if (result.error) {
-        toast.error(result.error)
-      } else if (result.errorCount > 0) {
-        const failedResults = result.results?.filter((r: { error: string | null }) => r.error) || []
-        console.error("Failed bundle insertions:", failedResults)
-        toast.warning(`${result.addedToMasterCount} items added, ${result.errorCount} failed`)
+        const createResult = await generateBundleItemMaster(
+          selectedBundleCategory.id,
+          selectedBundleCategory.category_name,
+          individualProducts,
+          missingSizeNames,
+          true, // addToBundleItemMaster
+          true, // createReferenceIfMissing
+          selectedPrintsForName, // custom prints for name
+          selectedPrintsForSKU // custom prints for SKU
+        )
+
+        if (createResult.error) {
+          toast.error(createResult.error)
+        } else {
+          totalAdded += createResult.addedToMasterCount || 0
+          totalErrors += createResult.errorCount || 0
+        }
+      }
+
+      if (totalErrors > 0) {
+        toast.warning(`${totalAdded} items added, ${totalErrors} failed`)
       } else {
-        toast.success(`${result.addedToMasterCount} bundle item(s) added to Item Master`)
+        toast.success(`${totalAdded} bundle item(s) added to Item Master`)
         handleCloseBundleSection()
         await onItemsAdded()
       }
@@ -548,27 +627,8 @@ export function BundleDetailsForm({
         {/* Final Sizes Selection */}
         {bundleProducts.filter((p) => p.print !== null).length >= 1 && finalSizesOptions.length > 0 && (
           <div className="border-t border-gray-200 pt-4">
-            <div className="flex items-center justify-between mb-3">
+            <div className="mb-3">
               <h3 className="text-sm font-semibold text-gray-700">Select Sizes</h3>
-              {!hasCheckedReference && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={checkBundleExists}
-                  disabled={isCheckingReference}
-                  className="text-xs text-gray-500 hover:text-orange-600"
-                >
-                  {isCheckingReference ? (
-                    <>
-                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                      Checking...
-                    </>
-                  ) : (
-                    "Check which exist in reference"
-                  )}
-                </Button>
-              )}
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -618,6 +678,144 @@ export function BundleDetailsForm({
           </div>
         )}
 
+        {/* Check Reference Button */}
+        {bundleProducts.filter((p) => p.print !== null).length >= 1 && finalSizesOptions.length > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={checkBundleExists}
+            disabled={isCheckingReference}
+            className="w-full h-12 text-base font-semibold border-gray-300 text-gray-900 hover:bg-gray-50 hover:border-gray-400"
+          >
+            {isCheckingReference ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Checking...
+              </>
+            ) : (
+              "Check which exist in reference"
+            )}
+          </Button>
+        )}
+
+        {/* Print Configuration for Missing Bundles */}
+        {hasCheckedReference && missingBundles.length > 0 && (
+          <div className="border-t border-gray-200 pt-4 space-y-4">
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm font-medium text-amber-800 mb-1">
+                ⚠ Configure New Bundle
+              </p>
+              <p className="text-xs text-amber-700">
+                Select which prints to include in the bundle name and SKU
+              </p>
+            </div>
+
+            {/* Print Selection for Name */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-gray-700">Prints in Bundle Name</Label>
+              <Select
+                onValueChange={(value) => {
+                  if (!selectedPrintsForName.includes(value)) {
+                    setSelectedPrintsForName((prev) => [...prev, value])
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select prints to include in name..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {uniquePrints
+                    .filter((print) => !selectedPrintsForName.includes(print.code))
+                    .map((print) => (
+                      <SelectItem key={`name-${print.code}`} value={print.code}>
+                        {print.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+
+              {/* Selected prints badges */}
+              {selectedPrintsForName.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedPrintsForName.map((code) => {
+                    const print = uniquePrints.find((p) => p.code === code)
+                    return (
+                      <Badge
+                        key={`badge-name-${code}`}
+                        variant="secondary"
+                        className="pl-2.5 pr-1 py-1 text-sm"
+                      >
+                        {print?.name}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedPrintsForName((prev) => prev.filter((c) => c !== code))
+                          }}
+                          className="ml-1.5 hover:bg-gray-300 rounded-full p-0.5"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Print Selection for SKU */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-gray-700">Prints in SKU Code</Label>
+              <Select
+                onValueChange={(value) => {
+                  if (!selectedPrintsForSKU.includes(value)) {
+                    setSelectedPrintsForSKU((prev) => [...prev, value])
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select prints to include in SKU..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {uniquePrints
+                    .filter((print) => !selectedPrintsForSKU.includes(print.code))
+                    .map((print) => (
+                      <SelectItem key={`sku-${print.code}`} value={print.code}>
+                        <span className="font-mono">{print.code}</span>
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+
+              {/* Selected prints badges */}
+              {selectedPrintsForSKU.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedPrintsForSKU.map((code) => {
+                    const print = uniquePrints.find((p) => p.code === code)
+                    return (
+                      <Badge
+                        key={`badge-sku-${code}`}
+                        variant="outline"
+                        className="pl-2.5 pr-1 py-1 text-sm font-mono"
+                      >
+                        {print?.code}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedPrintsForSKU((prev) => prev.filter((c) => c !== code))
+                          }}
+                          className="ml-1.5 hover:bg-gray-200 rounded-full p-0.5"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Submit Button */}
         {selectedBundleCategory && bundleProducts.filter((p) => p.print !== null).length >= 1 && (
           <Button
@@ -634,7 +832,7 @@ export function BundleDetailsForm({
             ) : (
               <>
                 <Plus className="h-5 w-5 mr-2" />
-                Add {selectedFinalSizes.length > 0 ? `${selectedFinalSizes.length} ` : ""}Bundle Item{selectedFinalSizes.length !== 1 ? "s" : ""} to Item Master
+                Add {selectedFinalSizes.length} Bundle{selectedFinalSizes.length !== 1 ? "s" : ""}
               </>
             )}
           </Button>

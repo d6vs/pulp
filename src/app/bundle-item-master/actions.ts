@@ -95,7 +95,9 @@ export async function generateBundleItemMaster(
   individualProducts: IndividualProduct[],
   sizeNames: string[],
   addToBundleItemMaster: boolean = true,
-  createReferenceIfMissing: boolean = true // false for /bundle-item-master, true for /master-data
+  createReferenceIfMissing: boolean = true, // false for /bundle-item-master, true for /master-data
+  printsForName?: string[], // Optional: specific print codes to include in name
+  printsForSKU?: string[] // Optional: specific print codes to include in SKU
 ) {
   try {
     const results: { productCode: string; error: string | null; action: "created" | "existed" | "added_to_master" }[] = []
@@ -114,8 +116,17 @@ export async function generateBundleItemMaster(
     // Sort by print code to ensure consistent SKU order (BB_PP_RK instead of PP_RK_BB)
     printCodeNamePairs.sort((a, b) => a.code.localeCompare(b.code))
 
-    const uniquePrintCodes = printCodeNamePairs.map((p) => p.code)
-    const uniquePrintNames = printCodeNamePairs.map((p) => p.name)
+    // Use custom print selections if provided, otherwise use all prints
+    const printsForNameFiltered = printsForName
+      ? printCodeNamePairs.filter((p) => printsForName.includes(p.code))
+      : printCodeNamePairs
+
+    const printsForSKUFiltered = printsForSKU
+      ? printCodeNamePairs.filter((p) => printsForSKU.includes(p.code))
+      : printCodeNamePairs
+
+    const uniquePrintCodes = printsForSKUFiltered.map((p) => p.code)
+    const uniquePrintNames = printsForNameFiltered.map((p) => p.name)
 
     // Get bundle category details
     const { data: bundleCategory, error: categoryError } = await supabaseAdmin
