@@ -1,12 +1,13 @@
 "use client"
 
-import { Download, Trash2, Clock } from "lucide-react"
+import { Download, Trash2, Clock, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import type { DownloadEntry } from "@/hooks/useDownloadHistory"
+import type { DownloadHistoryEntry } from "@/hooks/useDownloadHistory"
 
 type DownloadHistoryPanelProps = {
-  history: DownloadEntry[]
+  history: DownloadHistoryEntry[]
+  loading?: boolean
   onClear: () => void
 }
 
@@ -22,7 +23,17 @@ function formatDateTime(isoString: string): string {
   })
 }
 
-export function DownloadHistoryPanel({ history, onClear }: DownloadHistoryPanelProps) {
+export function DownloadHistoryPanel({ history, loading, onClear }: DownloadHistoryPanelProps) {
+  if (loading) {
+    return (
+      <Card className="border-0 shadow-lg">
+        <CardContent className="p-8 flex items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+        </CardContent>
+      </Card>
+    )
+  }
+
   if (history.length === 0) return null
 
   return (
@@ -52,12 +63,10 @@ export function DownloadHistoryPanel({ history, onClear }: DownloadHistoryPanelP
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-800 font-mono truncate">{entry.filename}</p>
-                <p className="text-xs text-gray-500 mt-1">{entry.description}</p>
               </div>
             </div>
             <div className="shrink-0 text-right ml-4">
-              <p className="text-xs text-gray-500">{formatDateTime(entry.downloadedAt)}</p>
-              <p className="text-xs text-gray-400 mt-1">{entry.rowCount} rows</p>
+              <p className="text-xs text-gray-500">{formatDateTime(entry.created_at)}</p>
             </div>
           </div>
         ))}

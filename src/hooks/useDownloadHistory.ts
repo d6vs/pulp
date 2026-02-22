@@ -1,54 +1,49 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
+import {
+  addDownloadHistory,
+  getDownloadHistory,
+  clearDownloadHistory,
+  type DownloadHistoryEntry,
+  type DownloadType,
+} from "@/lib/download-history-actions"
 
-export type DownloadEntry = {
-  id: string
-  filename: string
-  description: string
-  rowCount: number
-  downloadedAt: string // ISO string
-}
+export type { DownloadHistoryEntry, DownloadType }
 
-export function useDownloadHistory(storageKey: string) {
-  const [history, setHistory] = useState<DownloadEntry[]>(() => {
-    if (typeof window === "undefined") return []
-    try {
-      const stored = localStorage.getItem(storageKey)
-      return stored ? (JSON.parse(stored) as DownloadEntry[]) : []
-    } catch {
-      return []
+export function useDownloadHistory(downloadType: DownloadType) {
+  const [history, setHistory] = useState<DownloadHistoryEntry[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Fetch history on mount
+  useEffect(() => {
+    const fetchHistory = async () => {
+      setLoading(true)
+      const { data } = await getDownloadHistory(downloadType)
+      setHistory(data)
+      setLoading(false)
     }
-  })
+    fetchHistory()
+  }, [downloadType])
 
-  const addEntry = useCallback(
-    (entry: Omit<DownloadEntry, "id" | "downloadedAt">) => {
-      const newEntry: DownloadEntry = {
-        ...entry,
-        id: Date.now().toString(),
-        downloadedAt: new Date().toISOString(),
-      }
-      setHistory((prev) => {
-        const updated = [newEntry, ...prev].slice(0, 50) // keep last 50
-        try {
-          localStorage.setItem(storageKey, JSON.stringify(updated))
-        } catch {
-          // storage quota exceeded — silently ignore
-        }
-        return updated
-      })
-    },
-    [storageKey]
-  )
-
-  const clearHistory = useCallback(() => {
-    setHistory([])
-    try {
-      localStorage.removeItem(storageKey)
-    } catch {
-      // ignore
+  const addEntry = useCallback(async (filename: string) => {
+    const { data } = await addDownloadHistory(filename, downloadType)
+    if (data) {
+      setHistory((prev) => [data, ...prev].slice(0, 50))
     }
-  }, [storageKey])
+  }, [downloadType])
 
-  return { history, addEntry, clearHistory }
+  const clearHistory = useCallback(async () => {
+    const { success } = await clearDownloadHistory(downloadType)
+    if (success) {
+      setHistory([])
+    }
+  }, [downloadType])
+
+  const refreshHistory = useCallback(async () => {
+    const { data } = await getDownloadHistory(downloadType)
+    setHistory(data)
+  }, [downloadType])
+
+  return { history, loading, addEntry, clearHistory, refreshHistory }
 }
