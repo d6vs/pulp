@@ -1,5 +1,8 @@
 import type { Metadata } from "next"
 
+// Prevent static generation - auth pages need runtime env vars
+export const dynamic = "force-dynamic"
+
 export const metadata: Metadata = {
   title: "Login | Pulp",
   description: "Sign in to your account",
