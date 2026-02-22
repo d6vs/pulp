@@ -2,6 +2,9 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { UserInfo } from "@/components/auth";
 
+// Prevent static generation - pages need Supabase at runtime
+export const dynamic = "force-dynamic";
+
 export default function MainLayout({
   children,
 }: {
