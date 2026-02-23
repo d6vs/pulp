@@ -306,7 +306,7 @@ export function UpdateWeightTab({ categories, sizes }: UpdateWeightTabProps) {
             <Button
               type="submit"
               className="w-full h-11 text-base font-semibold bg-orange-600 hover:bg-orange-700"
-              disabled={isSubmitting || selectedSizeWeights.length === 0}
+              disabled={isSubmitting || !weightCategory || selectedSizeWeights.length === 0}
             >
               <Weight className="h-5 w-5 mr-2" />
               {isSubmitting ? "Saving..." : `Save ${selectedSizeWeights.length > 0 ? selectedSizeWeights.length : ""} Weight${selectedSizeWeights.length !== 1 ? "s" : ""}`}

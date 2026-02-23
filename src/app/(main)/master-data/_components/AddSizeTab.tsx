@@ -85,7 +85,7 @@ export function AddSizeTab({ sizes, onSizeAdded }: AddSizeTabProps) {
             <Button
               type="submit"
               className="w-full h-11 text-base font-semibold bg-orange-600 hover:bg-orange-700"
-              disabled={isSubmitting}
+              disabled={isSubmitting || sizeName.trim() === ""}
             >
               <Plus className="h-5 w-5 mr-2" />
               {isSubmitting ? "Adding Size..." : "Add Size"}

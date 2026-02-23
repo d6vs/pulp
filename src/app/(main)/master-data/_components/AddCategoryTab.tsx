@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -59,6 +59,7 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
   const codeExists = categoryCode.trim() !== "" &&
     categories.some((c) => c.category_code?.toLowerCase() === categoryCode.trim().toLowerCase())
   const hasValidationError = nameExists || codeExists
+  const isFormIncomplete = categoryName.trim() === "" || categoryCode.trim() === ""
 
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -83,6 +84,13 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteProductCount, setDeleteProductCount] = useState<number>(0)
   const [isCheckingDelete, setIsCheckingDelete] = useState(false)
+  // Optimistic updates: track deleted IDs to immediately hide from UI
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
+
+  // Clear optimistic deletions when categories data refreshes from server
+  useEffect(() => {
+    setDeletedIds(new Set())
+  }, [categories])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -191,27 +199,49 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
 
   const handleDelete = async (forceDelete: boolean = false) => {
     if (!deleteTarget) return
+    const idToDelete = deleteTarget.id
+    const productCount = deleteProductCount
 
+    // Optimistic update: immediately hide from UI
+    setDeletedIds((prev) => new Set(prev).add(idToDelete))
+    setDeleteTarget(null)
+    setDeleteProductCount(0)
     setIsDeleting(true)
+
     try {
-      const result = await deleteCategory(deleteTarget.id, forceDelete)
+      const result = await deleteCategory(idToDelete, forceDelete)
 
       if (result.error) {
+        // Restore on error
+        setDeletedIds((prev) => {
+          const next = new Set(prev)
+          next.delete(idToDelete)
+          return next
+        })
         toast.error(result.error)
       } else if (result.hasProducts && !forceDelete) {
-        // This shouldn't happen since we pre-check, but handle it just in case
+        // Restore on error
+        setDeletedIds((prev) => {
+          const next = new Set(prev)
+          next.delete(idToDelete)
+          return next
+        })
         toast.error(result.message || "This category has products. Please delete them first.")
       } else {
-        const message = forceDelete && deleteProductCount > 0
-          ? `Category and ${deleteProductCount} product${deleteProductCount === 1 ? "" : "s"} deleted successfully!`
+        const message = forceDelete && productCount > 0
+          ? `Category and ${productCount} product${productCount === 1 ? "" : "s"} deleted successfully!`
           : "Category deleted successfully!"
         toast.success(message)
-        onCategoryAdded()
-        setDeleteTarget(null)
-        setDeleteProductCount(0)
+        onCategoryAdded() // Sync with server in background
       }
     } catch (error) {
       console.error("Error:", error)
+      // Restore on error
+      setDeletedIds((prev) => {
+        const next = new Set(prev)
+        next.delete(idToDelete)
+        return next
+      })
       toast.error("Something unexpected happened. Please try again.")
     } finally {
       setIsDeleting(false)
@@ -223,13 +253,15 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
     setDeleteProductCount(0)
   }
 
-  const filteredCategories = categories.filter((category) => {
-    const query = searchQuery.toLowerCase()
-    return (
-      category.category_name.toLowerCase().includes(query) ||
-      category.category_code?.toLowerCase().includes(query)
-    )
-  })
+  const filteredCategories = categories
+    .filter((category) => !deletedIds.has(category.id)) // Optimistic: hide deleted
+    .filter((category) => {
+      const query = searchQuery.toLowerCase()
+      return (
+        category.category_name.toLowerCase().includes(query) ||
+        category.category_code?.toLowerCase().includes(query)
+      )
+    })
 
   return (
     <>
@@ -354,7 +386,7 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
             <Button
               type="submit"
               className="w-full h-11 text-base font-semibold bg-orange-600 hover:bg-orange-700"
-              disabled={isSubmitting || hasValidationError}
+              disabled={isSubmitting || hasValidationError || isFormIncomplete}
             >
               <Plus className="h-5 w-5 mr-2" />
               {isSubmitting ? "Adding Category..." : "Add Category"}
@@ -366,7 +398,7 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
       {/* Right Column - Existing Categories */}
       <SearchableList
         title="Existing Categories"
-        count={categories.length}
+        count={categories.length - deletedIds.size}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name or code..."

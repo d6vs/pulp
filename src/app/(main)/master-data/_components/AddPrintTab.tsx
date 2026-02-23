@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -46,6 +46,7 @@ export function AddPrintTab({ prints, onPrintAdded }: AddPrintTabProps) {
   const codeExists = printCode.trim() !== "" &&
     prints.some((p) => p.print_code?.toLowerCase() === printCode.trim().toLowerCase())
   const hasValidationError = nameExists || codeExists
+  const isFormIncomplete = printName.trim() === "" || printCode.trim() === ""
 
   // Edit state
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -66,6 +67,13 @@ export function AddPrintTab({ prints, onPrintAdded }: AddPrintTabProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteProductCount, setDeleteProductCount] = useState<number>(0)
   const [isCheckingDelete, setIsCheckingDelete] = useState(false)
+  // Optimistic updates: track deleted IDs to immediately hide from UI
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
+
+  // Clear optimistic deletions when prints data refreshes from server
+  useEffect(() => {
+    setDeletedIds(new Set())
+  }, [prints])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -154,26 +162,49 @@ export function AddPrintTab({ prints, onPrintAdded }: AddPrintTabProps) {
 
   const handleDelete = async (forceDelete: boolean = false) => {
     if (!deleteTarget) return
+    const idToDelete = deleteTarget.id
+    const productCount = deleteProductCount
 
+    // Optimistic update: immediately hide from UI
+    setDeletedIds((prev) => new Set(prev).add(idToDelete))
+    setDeleteTarget(null)
+    setDeleteProductCount(0)
     setIsDeleting(true)
+
     try {
-      const result = await deletePrint(deleteTarget.id, forceDelete)
+      const result = await deletePrint(idToDelete, forceDelete)
 
       if (result.error) {
+        // Restore on error
+        setDeletedIds((prev) => {
+          const next = new Set(prev)
+          next.delete(idToDelete)
+          return next
+        })
         toast.error(result.error)
       } else if (result.hasProducts && !forceDelete) {
+        // Restore on error
+        setDeletedIds((prev) => {
+          const next = new Set(prev)
+          next.delete(idToDelete)
+          return next
+        })
         toast.error(result.message || "This print has products. Please delete them first.")
       } else {
-        const message = forceDelete && deleteProductCount > 0
-          ? `Print and ${deleteProductCount} product${deleteProductCount === 1 ? "" : "s"} deleted successfully!`
+        const message = forceDelete && productCount > 0
+          ? `Print and ${productCount} product${productCount === 1 ? "" : "s"} deleted successfully!`
           : "Print deleted successfully!"
         toast.success(message)
-        onPrintAdded()
-        setDeleteTarget(null)
-        setDeleteProductCount(0)
+        onPrintAdded() // Sync with server in background
       }
     } catch (error) {
       console.error("Error:", error)
+      // Restore on error
+      setDeletedIds((prev) => {
+        const next = new Set(prev)
+        next.delete(idToDelete)
+        return next
+      })
       toast.error("Something unexpected happened. Please try again.")
     } finally {
       setIsDeleting(false)
@@ -185,13 +216,15 @@ export function AddPrintTab({ prints, onPrintAdded }: AddPrintTabProps) {
     setDeleteProductCount(0)
   }
 
-  const filteredPrints = prints.filter((print) => {
-    const query = searchQuery.toLowerCase()
-    return (
-      print.official_print_name.toLowerCase().includes(query) ||
-      print.print_code?.toLowerCase().includes(query)
-    )
-  })
+  const filteredPrints = prints
+    .filter((print) => !deletedIds.has(print.id)) // Optimistic: hide deleted
+    .filter((print) => {
+      const query = searchQuery.toLowerCase()
+      return (
+        print.official_print_name.toLowerCase().includes(query) ||
+        print.print_code?.toLowerCase().includes(query)
+      )
+    })
 
   return (
     <>
@@ -253,7 +286,7 @@ export function AddPrintTab({ prints, onPrintAdded }: AddPrintTabProps) {
             <Button
               type="submit"
               className="w-full h-11 text-base font-semibold bg-orange-600 hover:bg-orange-700 !mt-4"
-              disabled={isSubmitting || hasValidationError}
+              disabled={isSubmitting || hasValidationError || isFormIncomplete}
             >
               <Plus className="h-5 w-5 mr-2" />
               {isSubmitting ? "Adding Print..." : "Add Print"}
@@ -265,7 +298,7 @@ export function AddPrintTab({ prints, onPrintAdded }: AddPrintTabProps) {
       {/* Right Column - Existing Prints */}
       <SearchableList
         title="Existing Prints"
-        count={prints.length}
+        count={prints.length - deletedIds.size}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         searchPlaceholder="Search by name or code..."

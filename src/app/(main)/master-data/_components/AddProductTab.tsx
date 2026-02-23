@@ -416,7 +416,7 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
             <Button
               type="submit"
               className="w-full h-11 text-base font-semibold bg-orange-600 hover:bg-orange-700"
-              disabled={isSubmitting || sizeProducts.length === 0}
+              disabled={isSubmitting || !selectedCategory || !selectedPrint || sizeProducts.length === 0}
             >
               <Plus className="h-5 w-5 mr-2" />
               {isSubmitting

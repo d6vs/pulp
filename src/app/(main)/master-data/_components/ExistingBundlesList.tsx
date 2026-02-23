@@ -44,6 +44,8 @@ export function ExistingBundlesList({ bundles, onDeleted }: ExistingBundlesListP
   const [currentPage, setCurrentPage] = useState(1)
   const [confirmId, setConfirmId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  // Optimistic updates: track deleted IDs to immediately hide from UI
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -53,10 +55,18 @@ export function ExistingBundlesList({ bundles, onDeleted }: ExistingBundlesListP
     return () => clearTimeout(timer)
   }, [searchQuery])
 
+  // Clear optimistic deletions when bundles data refreshes from server
+  useEffect(() => {
+    setDeletedIds(new Set())
+  }, [bundles])
+
   const filtered = useMemo(() => {
-    if (!debouncedQuery) return bundles
+    // First filter out optimistically deleted items
+    const notDeleted = bundles.filter((b) => !deletedIds.has(b.id))
+
+    if (!debouncedQuery) return notDeleted
     const q = debouncedQuery.toLowerCase()
-    return bundles.filter((b) =>
+    return notDeleted.filter((b) =>
       b.product_code?.toLowerCase().includes(q) ||
       b.name?.toLowerCase().includes(q) ||
       b.category_code?.toLowerCase().includes(q) ||
@@ -64,7 +74,7 @@ export function ExistingBundlesList({ bundles, onDeleted }: ExistingBundlesListP
       b.component_product_code?.toLowerCase().includes(q) ||
       b.internal_style_name?.toLowerCase().includes(q)
     )
-  }, [bundles, debouncedQuery])
+  }, [bundles, debouncedQuery, deletedIds])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const startIdx = (currentPage - 1) * PAGE_SIZE
@@ -74,17 +84,34 @@ export function ExistingBundlesList({ bundles, onDeleted }: ExistingBundlesListP
 
   const handleDelete = async () => {
     if (!confirmId) return
+    const idToDelete = confirmId
+
+    // Optimistic update: immediately hide from UI
+    setDeletedIds((prev) => new Set(prev).add(idToDelete))
+    setConfirmId(null)
     setIsDeleting(true)
+
     try {
-      const result = await deleteBundleReference(confirmId)
+      const result = await deleteBundleReference(idToDelete)
       if (result.error) {
+        // Restore on error
+        setDeletedIds((prev) => {
+          const next = new Set(prev)
+          next.delete(idToDelete)
+          return next
+        })
         toast.error(result.error)
       } else {
         toast.success("Bundle reference deleted")
-        setConfirmId(null)
-        onDeleted()
+        onDeleted() // Sync with server in background
       }
     } catch {
+      // Restore on error
+      setDeletedIds((prev) => {
+        const next = new Set(prev)
+        next.delete(idToDelete)
+        return next
+      })
       toast.error("Failed to delete bundle reference")
     } finally {
       setIsDeleting(false)
@@ -95,7 +122,7 @@ export function ExistingBundlesList({ bundles, onDeleted }: ExistingBundlesListP
     <>
       <SearchableList
         title="Existing Bundles"
-        count={bundles.length}
+        count={bundles.length - deletedIds.size}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         searchPlaceholder="Search by code, name, size, style..."
