@@ -19,7 +19,7 @@ export default function LoginPage() {
   const supabase = createClient()
 
   const validateEmail = (email: string) => {
-    const allowedDomains = ["@orangesugars.in", "@abhinavdev.in.net", "@gmail.com"]
+    const allowedDomains = ["@orangesugar.in", "@abhinavdev.in.net", "@gmail.com"]
     return allowedDomains.some(domain => email.toLowerCase().endsWith(domain))
   }
 
@@ -36,7 +36,7 @@ export default function LoginPage() {
     e.preventDefault()
 
     if (!validateEmail(email)) {
-      toast.error("Only @orangesugars.in email addresses are allowed")
+      toast.error("Only @orangesugar.in email addresses are allowed")
       return
     }
 
@@ -71,7 +71,7 @@ export default function LoginPage() {
     e.preventDefault()
 
     if (!validateEmail(email)) {
-      toast.error("Only @orangesugars.in email addresses are allowed")
+      toast.error("Only @orangesugar.in email addresses are allowed")
       return
     }
 
@@ -156,7 +156,7 @@ export default function LoginPage() {
           <Input
             id="email"
             type="email"
-            placeholder="you@orangesugars.in"
+            placeholder="you@orangesugar.in"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
