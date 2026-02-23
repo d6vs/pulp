@@ -98,7 +98,7 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
         sku_schema: skuSchema,
         hsn_code: hsnCode.trim() || null,
         size_in_product_name: sizeInProductName,
-        product_name_prefix: productNamePrefix.trim() || null,
+        product_name_prefix: productNamePrefix.trim() ? `${productNamePrefix.trim()} |` : null,
         category_type: categoryType,
       })
 
@@ -130,7 +130,7 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
     setEditSchema(category.sku_schema)
     setEditHsn(category.hsn_code || "")
     setEditSizeInProductName(category.size_in_product_name)
-    setEditProductNamePrefix(category.product_name_prefix || "")
+    setEditProductNamePrefix(category.product_name_prefix?.replace(/ \|$/, "") || "")
     setEditCategoryType(category.category_type || "individual")
   }
 
@@ -159,7 +159,7 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
         sku_schema: editSchema,
         hsn_code: editHsn.trim() || null,
         size_in_product_name: editSizeInProductName,
-        product_name_prefix: editProductNamePrefix.trim() || null,
+        product_name_prefix: editProductNamePrefix.trim() ? `${editProductNamePrefix.trim()} |` : null,
         category_type: editCategoryType,
       })
 
