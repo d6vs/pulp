@@ -459,23 +459,34 @@ export async function addBundlesToItemMasterFromReference(
 
     for (const bundle of existingBundles) {
       // Calculate total prices from products table (for latest prices)
+      // Use component_quantity from bundle_reference (DB) for consistency
       let totalCostPrice = 0
       let totalMRP = 0
       let totalBasePrice = 0
 
-      // Fetch latest prices for each component
-      for (const indProduct of individualProducts) {
-        const { product: foundProduct } = await findProductByCategoryAndSizeName(
-          indProduct.categoryId,
-          bundle.sizeName,
-          indProduct.printId
+      // Fetch latest prices for each component using DB quantities
+      for (const component of bundle.components) {
+        // Find matching individual product to get categoryId and printId
+        const matchingIndProduct = individualProducts.find(
+          (p) =>
+            component.component_product_code?.includes(p.printCode) &&
+            component.component_product_code?.includes(p.categoryCode)
         )
 
-        if (foundProduct) {
-          const quantity = indProduct.quantity || 1
-          totalCostPrice += (foundProduct.cost_price || 0) * quantity
-          totalMRP += (foundProduct.mrp || 0) * quantity
-          totalBasePrice += (foundProduct.base_price || foundProduct.mrp || 0) * quantity
+        if (matchingIndProduct) {
+          const { product: foundProduct } = await findProductByCategoryAndSizeName(
+            matchingIndProduct.categoryId,
+            bundle.sizeName,
+            matchingIndProduct.printId
+          )
+
+          if (foundProduct) {
+            // Use component_quantity from DB, not form quantity
+            const quantity = component.component_quantity || 1
+            totalCostPrice += (foundProduct.cost_price || 0) * quantity
+            totalMRP += (foundProduct.mrp || 0) * quantity
+            totalBasePrice += (foundProduct.base_price || foundProduct.mrp || 0) * quantity
+          }
         }
       }
 
