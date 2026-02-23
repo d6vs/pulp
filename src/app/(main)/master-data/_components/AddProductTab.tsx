@@ -382,22 +382,32 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
                         <div className="space-y-1">
                           <Label className="text-xs text-gray-600">Cost Price</Label>
                           <Input
-                            type="number"
-                            step="1"
+                            type="text"
+                            inputMode="decimal"
                             placeholder="0"
                             value={sp.costPrice}
-                            onChange={(e) => handleSizeProductChange(sp.sizeId, "costPrice", e.target.value)}
+                            onChange={(e) => {
+                              const val = e.target.value
+                              if (val === "" || /^\d*\.?\d*$/.test(val)) {
+                                handleSizeProductChange(sp.sizeId, "costPrice", val)
+                              }
+                            }}
                             className="h-9"
                           />
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs text-gray-600">MRP</Label>
                           <Input
-                            type="number"
-                            step="1"
+                            type="text"
+                            inputMode="decimal"
                             placeholder="0"
                             value={sp.mrp}
-                            onChange={(e) => handleSizeProductChange(sp.sizeId, "mrp", e.target.value)}
+                            onChange={(e) => {
+                              const val = e.target.value
+                              if (val === "" || /^\d*\.?\d*$/.test(val)) {
+                                handleSizeProductChange(sp.sizeId, "mrp", val)
+                              }
+                            }}
                             className="h-9"
                           />
                         </div>
