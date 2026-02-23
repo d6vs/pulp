@@ -31,6 +31,11 @@ const SKU_SCHEMAS = [
   { value: 6, label: "Type 6", example: "Categorycode_Print" },
 ]
 
+const CATEGORY_TYPES = [
+  { value: "individual", label: "Individual" },
+  { value: "bundle", label: "Bundle" },
+]
+
 type AddCategoryTabProps = {
   categories: Category[]
   onCategoryAdded: () => void
@@ -43,6 +48,7 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
   const [hsnCode, setHsnCode] = useState("")
   const [sizeInProductName, setSizeInProductName] = useState(false)
   const [productNamePrefix, setProductNamePrefix] = useState("")
+  const [categoryType, setCategoryType] = useState<string>("individual")
   const [searchQuery, setSearchQuery] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -61,6 +67,7 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
   const [editHsn, setEditHsn] = useState("")
   const [editSizeInProductName, setEditSizeInProductName] = useState(false)
   const [editProductNamePrefix, setEditProductNamePrefix] = useState("")
+  const [editCategoryType, setEditCategoryType] = useState<string>("individual")
   const [isSaving, setIsSaving] = useState(false)
 
   // Edit validation (exclude current item being edited)
@@ -92,6 +99,7 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
         hsn_code: hsnCode.trim() || null,
         size_in_product_name: sizeInProductName,
         product_name_prefix: productNamePrefix.trim() || null,
+        category_type: categoryType,
       })
 
       if (result.error) {
@@ -104,6 +112,7 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
         setHsnCode("")
         setSizeInProductName(false)
         setProductNamePrefix("")
+        setCategoryType("individual")
         onCategoryAdded()
       }
     } catch (error) {
@@ -122,6 +131,7 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
     setEditHsn(category.hsn_code || "")
     setEditSizeInProductName(category.size_in_product_name)
     setEditProductNamePrefix(category.product_name_prefix || "")
+    setEditCategoryType(category.category_type || "individual")
   }
 
   const cancelEdit = () => {
@@ -132,6 +142,7 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
     setEditHsn("")
     setEditSizeInProductName(false)
     setEditProductNamePrefix("")
+    setEditCategoryType("individual")
   }
 
   const handleUpdate = async (id: string) => {
@@ -149,6 +160,7 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
         hsn_code: editHsn.trim() || null,
         size_in_product_name: editSizeInProductName,
         product_name_prefix: editProductNamePrefix.trim() || null,
+        category_type: editCategoryType,
       })
 
       if (result.error) {
@@ -260,6 +272,24 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
               ) : (
                 <p className="text-xs text-gray-500">Short code for the category (will be used in SKU)</p>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                Category Type
+              </Label>
+              <select
+                value={categoryType}
+                onChange={(e) => setCategoryType(e.target.value)}
+                className="w-full h-10 px-3 rounded-md border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                {CATEGORY_TYPES.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500">Individual for single products, Bundle for combo products</p>
             </div>
 
             <div className="space-y-2">
@@ -381,6 +411,17 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
                       )}
                     </div>
                     <select
+                      value={editCategoryType}
+                      onChange={(e) => setEditCategoryType(e.target.value)}
+                      className="w-full h-8 px-2 rounded-md border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    >
+                      {CATEGORY_TYPES.map((type) => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </select>
+                    <select
                       value={editSchema}
                       onChange={(e) => setEditSchema(parseInt(e.target.value))}
                       className="w-full h-8 px-2 rounded-md border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -443,6 +484,13 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded font-mono">
                             {category.category_code}
+                          </span>
+                          <span className={`text-xs px-2 py-0.5 rounded capitalize ${
+                            category.category_type === "bundle"
+                              ? "bg-pink-100 text-pink-700"
+                              : "bg-teal-100 text-teal-700"
+                          }`}>
+                            {category.category_type || "Individual"}
                           </span>
                           <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
                             Type {category.sku_schema}

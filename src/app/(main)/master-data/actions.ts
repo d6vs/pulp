@@ -13,6 +13,7 @@ export async function createCategory(category: {
   hsn_code: string | null
   size_in_product_name: boolean
   product_name_prefix: string | null
+  category_type: string | null
 }) {
   try {
     // Check duplicate category name
@@ -73,6 +74,7 @@ export async function updateCategory(id: string, category: {
   hsn_code: string | null
   size_in_product_name: boolean
   product_name_prefix: string | null
+  category_type: string | null
 }) {
   try {
     // Check duplicate category name (excluding current)
