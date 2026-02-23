@@ -19,6 +19,7 @@ import { toast } from "sonner"
 import { Plus, Package, Search, Pencil, Trash2, Check, X } from "lucide-react"
 import { createCategory, updateCategory, deleteCategory, getCategoryProductCount } from "../actions"
 import { SearchableList } from "@/components/ui/searchable-list"
+import { toTitleCase } from "@/lib/string-utils"
 import type { Category } from "@/types/common"
 
 const SKU_SCHEMAS = [
@@ -248,7 +249,7 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
                 type="text"
                 placeholder="e.g., Dresses"
                 value={categoryName}
-                onChange={(e) => setCategoryName(e.target.value)}
+                onChange={(e) => setCategoryName(toTitleCase(e.target.value))}
                 className={`h-10 ${nameExists ? "border-red-500 focus-visible:ring-red-500" : ""}`}
               />
               {nameExists && (
@@ -331,7 +332,7 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
                 type="text"
                 placeholder="e.g., Cotton Bib"
                 value={productNamePrefix}
-                onChange={(e) => setProductNamePrefix(e.target.value)}
+                onChange={(e) => setProductNamePrefix(toTitleCase(e.target.value))}
                 className="h-10"
               />
               <p className="text-xs text-gray-500">The base name used in product names (before print names and size)</p>
@@ -391,7 +392,7 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
                     <div>
                       <Input
                         value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
+                        onChange={(e) => setEditName(toTitleCase(e.target.value))}
                         placeholder="Category name"
                         className={`h-8 text-sm ${editNameExists ? "border-red-500" : ""}`}
                       />
@@ -440,7 +441,7 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
                     />
                     <Input
                       value={editProductNamePrefix}
-                      onChange={(e) => setEditProductNamePrefix(e.target.value)}
+                      onChange={(e) => setEditProductNamePrefix(toTitleCase(e.target.value))}
                       placeholder="Product Name Prefix"
                       className="h-8 text-sm"
                     />

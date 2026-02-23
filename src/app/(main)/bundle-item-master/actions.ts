@@ -182,6 +182,7 @@ export async function generateBundleItemMaster(
         sku: string        // actual product_code from products table (or generated as fallback)
         mrp: number
         printName: string // internal_style_name
+        quantity: number  // component quantity
         productData: {
           length_mm: number | null
           width_mm: number | null
@@ -240,7 +241,7 @@ export async function generateBundleItemMaster(
         totalCostPrice += productCostPrice * quantity
         totalMRP += productMRP * quantity
         totalBasePrice += (foundProduct?.base_price || productMRP) * quantity
-        componentProducts.push({ sku: indSKU, mrp: productMRP, printName: indProduct.printName, productData: foundProductData })
+        componentProducts.push({ sku: indSKU, mrp: productMRP, printName: indProduct.printName, productData: foundProductData, quantity: indProduct.quantity || 1 })
       }
 
       // --- Find existing bundle SKU in reference (order-independent) ---
@@ -318,7 +319,7 @@ export async function generateBundleItemMaster(
           type: referenceData?.type || FIXED_DEFAULTS.type,
           component_product_code: referenceData?.component_product_code || component.sku,
           internal_style_name: referenceData?.internal_style_name || component.printName,
-          component_quantity: referenceData?.component_quantity || FIXED_DEFAULTS.component_quantity,
+          component_quantity: referenceData?.component_quantity || component.quantity,
           component_price: component.mrp, // Always use latest MRP
           tax_calculation_type: referenceData?.tax_calculation_type || FIXED_DEFAULTS.tax_calculation_type,
         }

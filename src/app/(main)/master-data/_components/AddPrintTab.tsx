@@ -19,6 +19,7 @@ import { toast } from "sonner"
 import { Plus, Package, Search, Pencil, Trash2, Check, X } from "lucide-react"
 import { createPrint, updatePrint, deletePrint, getPrintProductCount } from "../actions"
 import { SearchableList } from "@/components/ui/searchable-list"
+import { toTitleCase } from "@/lib/string-utils"
 
 type Print = {
   id: string
@@ -210,7 +211,7 @@ export function AddPrintTab({ prints, onPrintAdded }: AddPrintTabProps) {
                 type="text"
                 placeholder="e.g., Floral Garden"
                 value={printName}
-                onChange={(e) => setPrintName(e.target.value)}
+                onChange={(e) => setPrintName(toTitleCase(e.target.value))}
                 className={`h-10 ${nameExists ? "border-red-500 focus-visible:ring-red-500" : ""}`}
               />
               {nameExists && (
@@ -244,7 +245,7 @@ export function AddPrintTab({ prints, onPrintAdded }: AddPrintTabProps) {
                 type="text"
                 placeholder="e.g., Blue, Red, Multi"
                 value={printColor}
-                onChange={(e) => setPrintColor(e.target.value)}
+                onChange={(e) => setPrintColor(toTitleCase(e.target.value))}
                 className="h-10"
               />
             </div>
@@ -290,7 +291,7 @@ export function AddPrintTab({ prints, onPrintAdded }: AddPrintTabProps) {
                     <div>
                       <Input
                         value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
+                        onChange={(e) => setEditName(toTitleCase(e.target.value))}
                         placeholder="Print name"
                         className={`h-8 text-sm ${editNameExists ? "border-red-500" : ""}`}
                       />
@@ -311,7 +312,7 @@ export function AddPrintTab({ prints, onPrintAdded }: AddPrintTabProps) {
                     </div>
                     <Input
                       value={editColor}
-                      onChange={(e) => setEditColor(e.target.value)}
+                      onChange={(e) => setEditColor(toTitleCase(e.target.value))}
                       placeholder="Color"
                       className="h-8 text-sm"
                     />
