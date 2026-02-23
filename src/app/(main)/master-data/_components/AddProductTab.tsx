@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { AutocompleteInput } from "@/components/ui/autocomplete-input"
 import { toast } from "sonner"
-import { Plus, X, Loader2 } from "lucide-react"
+import { Plus, Loader2 } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { createProduct } from "../actions"
-import { isBundleSchema, generateSKU } from "@/lib/sku-utils"
+import { generateSKU } from "@/lib/sku-utils"
 import { getSizesByCategoryAndPrint } from "@/app/(main)/purchase-orders/actions"
 import { generateItemMaster } from "@/app/(main)/item-master/actions"
 import type { Category, Print, Size } from "@/types/common"
@@ -33,7 +33,7 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
   const [categoryInput, setCategoryInput] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
   const [printInput, setPrintInput] = useState("")
-  const [selectedPrints, setSelectedPrints] = useState<Print[]>([])
+  const [selectedPrint, setSelectedPrint] = useState<Print | null>(null)
   const [sizeProducts, setSizeProducts] = useState<SizeProductData[]>([])
   const [material, setMaterial] = useState("")
   const [brand, setBrand] = useState("Orange Sugar")
@@ -43,14 +43,12 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
   const [hasCheckedProducts, setHasCheckedProducts] = useState(false)
   const [addToItemMaster, setAddToItemMaster] = useState(false)
 
-  const isBundle = selectedCategory ? isBundleSchema(selectedCategory.sku_schema) : false
-
   // Generate SKU preview for a specific size
   const getSkuPreview = (size: { id: string; size_name: string }) => {
-    if (!selectedCategory || selectedPrints.length === 0) return ""
+    if (!selectedCategory || !selectedPrint) return ""
     const categoryCode = selectedCategory.category_code || selectedCategory.category_name.replace(/\s+/g, "")
-    const printCodes = selectedPrints.map((p) => p.print_code || p.official_print_name.replace(/\s+/g, ""))
-    return generateSKU(selectedCategory.sku_schema, categoryCode, printCodes, size.size_name)
+    const printCode = selectedPrint.print_code || selectedPrint.official_print_name.replace(/\s+/g, "")
+    return generateSKU(selectedCategory.sku_schema, categoryCode, [printCode], size.size_name)
   }
 
   const resetExistingCheck = () => {
@@ -60,28 +58,14 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
 
   const handlePrintSelect = (print: Print) => {
     resetExistingCheck()
-    if (isBundle) {
-      setSelectedPrints((prev) => {
-        const exists = prev.find((p) => p.id === print.id)
-        if (exists) return prev.filter((p) => p.id !== print.id)
-        return [...prev, print]
-      })
-      setPrintInput("")
-    } else {
-      setSelectedPrints([print])
-      setPrintInput(print.official_print_name)
-    }
-  }
-
-  const handleRemovePrint = (printId: string) => {
-    resetExistingCheck()
-    setSelectedPrints((prev) => prev.filter((p) => p.id !== printId))
+    setSelectedPrint(print)
+    setPrintInput(print.official_print_name)
   }
 
   const handleCheckProducts = async () => {
-    if (!selectedCategory || selectedPrints.length === 0) return
+    if (!selectedCategory || !selectedPrint) return
     setIsCheckingProducts(true)
-    const result = await getSizesByCategoryAndPrint(selectedCategory.id, selectedPrints[0].id)
+    const result = await getSizesByCategoryAndPrint(selectedCategory.id, selectedPrint.id)
     if (result.data) {
       setExistingSizeIds(new Set(result.data.map((s: { id: string }) => s.id)))
     }
@@ -105,18 +89,17 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
   }
 
   // Generate product name based on category naming convention
-  // product_name_prefix already contains " |" at the end (e.g., "T-shirt |")
+  // product_name_prefix is stored with " |" suffix (e.g., "T-shirt |")
   const generateProductName = (sizeName: string): string => {
-    if (!selectedCategory || selectedPrints.length === 0) return ""
+    if (!selectedCategory || !selectedPrint) return ""
 
-    // Use prefix from DB (already has " |") or fallback to category name with " |"
     const prefix = selectedCategory.product_name_prefix || `${selectedCategory.category_name} |`
-    const printNames = selectedPrints.map((p) => p.official_print_name).join(" & ")
+    const printName = selectedPrint.official_print_name
 
     if (selectedCategory.size_in_product_name) {
-      return `${prefix} ${printNames} ${sizeName}`
+      return `${prefix} ${printName} ${sizeName}`
     }
-    return `${prefix} ${printNames}`
+    return `${prefix} ${printName}`
   }
 
   const handleSizeProductChange = (sizeId: string, field: keyof SizeProductData, value: string) => {
@@ -132,8 +115,8 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
       toast.error("Please select a category")
       return
     }
-    if (selectedPrints.length === 0) {
-      toast.error("Please select print name(s)")
+    if (!selectedPrint) {
+      toast.error("Please select a print name")
       return
     }
     if (sizeProducts.length === 0) {
@@ -153,15 +136,15 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
           return createProduct({
             category_id: selectedCategory.id,
             size_id: sp.sizeId,
-            print_id: selectedPrints[0]?.id ?? null,
+            print_id: selectedPrint.id,
             product_code: sku,
             name: productName,
-            base_price: mrpValue, // Base price = MRP
+            base_price: mrpValue,
             cost_price: sp.costPrice ? parseFloat(sp.costPrice) : null,
             mrp: mrpValue,
-            hsn_code: null,
+            hsn_code: selectedCategory.hsn_code,
             material: material.trim() || null,
-            color: null,
+            color: selectedPrint.color,
             brand: brand.trim() || null,
           })
         })
@@ -176,8 +159,8 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
           const imResult = await generateItemMaster(
             selectedCategory.id,
             selectedCategory.category_name,
-            selectedPrints[0].id,
-            selectedPrints[0].official_print_name,
+            selectedPrint.id,
+            selectedPrint.official_print_name,
             sizeIds
           )
           if (imResult.errorCount > 0) {
@@ -192,7 +175,7 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
         setCategoryInput("")
         setSelectedCategory(null)
         setPrintInput("")
-        setSelectedPrints([])
+        setSelectedPrint(null)
         setSizeProducts([])
         setMaterial("")
         setAddToItemMaster(false)
@@ -205,11 +188,6 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
       setIsSubmitting(false)
     }
   }
-
-  const selectedPrintIds = new Set(selectedPrints.map((p) => p.id))
-  const availablePrintOptions = isBundle
-    ? prints.filter((p) => !selectedPrintIds.has(p.id)).map((p) => p.official_print_name)
-    : prints.map((p) => p.official_print_name)
 
   return (
     <>
@@ -231,8 +209,8 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
                   if (cat) {
                     setSelectedCategory(cat)
                     setCategoryInput(value)
-                    // Reset prints and existing check when category changes
-                    setSelectedPrints([])
+                    // Reset print and existing check when category changes
+                    setSelectedPrint(null)
                     setPrintInput("")
                     resetExistingCheck()
                   }
@@ -245,7 +223,7 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
             {/* Print Name */}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                Print Name {isBundle && <span className="text-orange-600">(Select multiple)</span>}
+                Print Name
               </Label>
               <AutocompleteInput
                 value={printInput}
@@ -254,32 +232,10 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
                   const print = prints.find((p) => p.official_print_name === value)
                   if (print) handlePrintSelect(print)
                 }}
-                options={availablePrintOptions}
-                placeholder={isBundle ? "Search and add prints..." : "Search print..."}
+                options={prints.map((p) => p.official_print_name)}
+                placeholder="Search print..."
               />
             </div>
-
-            {/* Selected Prints Tags (for bundles) */}
-            {isBundle && selectedPrints.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {selectedPrints.map((print, index) => (
-                  <span
-                    key={print.id}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-100 text-orange-800 text-sm font-medium"
-                  >
-                    <span className="text-orange-500 text-xs font-bold">{index + 1}.</span>
-                    {print.official_print_name}
-                    <button
-                      type="button"
-                      onClick={() => handleRemovePrint(print.id)}
-                      className="ml-0.5 hover:bg-orange-200 rounded-full p-0.5 transition-colors"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
 
             {/* Size Selection */}
             <div className="border-t border-gray-200 pt-4 space-y-3">
@@ -287,7 +243,7 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
                 <Label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
                   Select Sizes <span className="text-orange-600">(Multiple)</span>
                 </Label>
-                {selectedCategory && selectedPrints.length > 0 && (
+                {selectedCategory && selectedPrint && (
                 <Button
                   type="button"
                   variant="ghost"
@@ -362,7 +318,7 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
                         <span className="text-sm font-semibold text-orange-700 bg-orange-100 px-2 py-1 rounded">
                           {sp.sizeName}
                         </span>
-                        {selectedCategory && selectedPrints.length > 0 && (
+                        {selectedCategory && selectedPrint && (
                           <span className="text-xs font-mono text-gray-500">
                             SKU: {getSkuPreview({ id: sp.sizeId, size_name: sp.sizeName })}
                           </span>
@@ -370,7 +326,7 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
                       </div>
 
                       {/* Auto-generated Product Name Preview */}
-                      {selectedCategory && selectedPrints.length > 0 && (
+                      {selectedCategory && selectedPrint && (
                         <div className="text-xs text-gray-600">
                           <span className="font-medium">Name:</span>{" "}
                           <span className="text-gray-800">{generateProductName(sp.sizeName)}</span>
