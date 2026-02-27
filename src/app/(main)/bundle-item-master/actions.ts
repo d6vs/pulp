@@ -636,17 +636,39 @@ export async function checkBundleExistsInReference(
       }
     }
 
-    // ========== STEP 1: Single query to bundle_reference for ALL sizes ==========
-    const { data: bundleEntries } = await supabaseAdmin
+    // ========== STEP 1: Find bundles that have ANY of the selected components ==========
+    const { data: matchingBundles } = await supabaseAdmin
       .from("bundle_reference")
-      .select("product_code, component_product_code, size")
+      .select("product_code, size")
       .eq("category_code", bundleCategoryName)
       .in("size", sizeNames)
       .in("component_product_code", allProductCodes)
-      
-    console.log("Bundle Reference Entries Fetched:", bundleEntries)
 
-    // ========== STEP 2: Group by size and product_code ==========
+    console.log("Bundles with matching components:", matchingBundles)
+
+    // Get unique bundle product codes that have at least one matching component
+    const potentialBundleCodes = [...new Set((matchingBundles || []).map(b => b.product_code))]
+
+    if (potentialBundleCodes.length === 0) {
+      console.log("No bundles found with any matching components")
+      return {
+        exists: false,
+        existingBundles: [],
+        missingBundles: sizeNames.map((s) => `${bundleCategoryName} | ${s}`),
+        error: null,
+      }
+    }
+
+    // ========== STEP 2: Get ALL components for potential bundles ==========
+    const { data: bundleEntries } = await supabaseAdmin
+      .from("bundle_reference")
+      .select("product_code, component_product_code, size")
+      .in("product_code", potentialBundleCodes)
+      .in("size", sizeNames)
+
+    console.log("All components for potential bundles:", bundleEntries)
+
+    // ========== STEP 3: Group by size and product_code ==========
     // Structure: size -> product_code -> Set of component_codes
     const sizeProductGroups = new Map<string, Map<string, Set<string>>>()
 
@@ -663,7 +685,7 @@ export async function checkBundleExistsInReference(
       }
     }
 
-    // ========== STEP 3: Find matching bundles for each size ==========
+    // ========== STEP 4: Find matching bundles for each size ==========
     const missingBundles: string[] = []
     const matchingProductCodes: { productCode: string; sizeName: string }[] = []
 
@@ -703,7 +725,7 @@ export async function checkBundleExistsInReference(
       }
     }
 
-    // ========== STEP 4: Fetch full data only for matched bundles (1 query) ==========
+    // ========== STEP 5: Fetch full data only for matched bundles (1 query) ==========
     const existingBundles: BundleReferenceData[] = []
 
     if (matchingProductCodes.length > 0) {
