@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import { Weight, Search, Trash2, Pencil, Check, X } from "lucide-react"
-import { getProductWeights, upsertProductWeight, deleteProductWeight } from "../actions"
+import { getProductWeights, upsertProductWeight, deleteProductWeight, importProductWeights } from "../actions"
+import { CSVUpload } from "@/components/ui/csv-upload"
 import { SearchableList } from "@/components/ui/searchable-list"
 import type { Category, Size } from "@/types/common"
 
@@ -219,6 +220,7 @@ export function UpdateWeightTab({ categories, sizes }: UpdateWeightTabProps) {
   return (
     <>
       {/* Left Column - Update Weight */}
+      <div className="space-y-6">
       <Card className="border-0 shadow-lg">
         <CardHeader className="border-b bg-white">
           <CardTitle className="text-lg font-semibold">Add Product Weights</CardTitle>
@@ -314,6 +316,16 @@ export function UpdateWeightTab({ categories, sizes }: UpdateWeightTabProps) {
           </form>
         </CardContent>
       </Card>
+
+      {/* CSV Import */}
+      <CSVUpload
+        templateType="product_weights"
+        onImport={importProductWeights}
+        onSuccess={fetchWeights}
+        title="Import Weights from CSV"
+        description="Bulk import or update product weights. Category and size names must match existing records."
+      />
+      </div>
 
       {/* Right Column - Existing Weights */}
       <SearchableList

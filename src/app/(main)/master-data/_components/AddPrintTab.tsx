@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import { Plus, Package, Search, Pencil, Trash2, Check, X } from "lucide-react"
-import { createPrint, updatePrint, deletePrint, getPrintProductCount } from "../actions"
+import { createPrint, updatePrint, deletePrint, getPrintProductCount, importPrints } from "../actions"
+import { CSVUpload } from "@/components/ui/csv-upload"
 import { SearchableList } from "@/components/ui/searchable-list"
 import { toTitleCase } from "@/lib/string-utils"
 
@@ -229,6 +230,7 @@ export function AddPrintTab({ prints, onPrintAdded }: AddPrintTabProps) {
   return (
     <>
       {/* Left Column - Add New Print */}
+      <div className="space-y-6">
       <Card className="border-0 shadow-lg">
         <CardHeader className="border-b bg-white">
           <CardTitle className="text-lg font-semibold">Add New Print</CardTitle>
@@ -294,6 +296,16 @@ export function AddPrintTab({ prints, onPrintAdded }: AddPrintTabProps) {
           </form>
         </CardContent>
       </Card>
+
+      {/* CSV Import */}
+      <CSVUpload
+        templateType="prints"
+        onImport={importPrints}
+        onSuccess={onPrintAdded}
+        title="Import Prints from CSV"
+        description="Bulk import or update prints. Existing prints (by name) will be updated."
+      />
+      </div>
 
       {/* Right Column - Existing Prints */}
       <SearchableList

@@ -9,7 +9,8 @@ import { AutocompleteInput } from "@/components/ui/autocomplete-input"
 import { toast } from "sonner"
 import { Plus, Loader2 } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
-import { createProduct } from "../actions"
+import { createProduct, importProducts } from "../actions"
+import { CSVUpload } from "@/components/ui/csv-upload"
 import { generateSKU } from "@/lib/sku-utils"
 import { getSizesByCategoryAndPrint } from "@/lib/actions/products"
 import { generateItemMaster } from "@/app/(main)/item-master/actions"
@@ -191,6 +192,7 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
 
   return (
     <>
+      <div className="space-y-6">
       <Card className="border-0 shadow-lg">
         <CardHeader className="border-b bg-white">
           <CardTitle className="text-lg font-semibold">Add New Product</CardTitle>
@@ -426,6 +428,16 @@ export function AddProductTab({ categories, prints, sizes, onProductAdded }: Add
           </form>
         </CardContent>
       </Card>
+
+      {/* CSV Import */}
+      <CSVUpload
+        templateType="products"
+        onImport={importProducts}
+        onSuccess={onProductAdded}
+        title="Import Products from CSV"
+        description="Bulk import or update products. Category, print, and size names must match existing records."
+      />
+      </div>
     </>
   )
 }

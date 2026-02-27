@@ -17,7 +17,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import { Plus, Package, Search, Pencil, Trash2, Check, X } from "lucide-react"
-import { createCategory, updateCategory, deleteCategory, getCategoryProductCount } from "../actions"
+import { createCategory, updateCategory, deleteCategory, getCategoryProductCount, importCategories } from "../actions"
+import { CSVUpload } from "@/components/ui/csv-upload"
 import { SearchableList } from "@/components/ui/searchable-list"
 import { toTitleCase } from "@/lib/string-utils"
 import type { Category } from "@/types/common"
@@ -266,6 +267,7 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
   return (
     <>
       {/* Left Column - Add New Category */}
+      <div className="space-y-6">
       <Card className="border-0 shadow-lg">
         <CardHeader className="border-b bg-white">
           <CardTitle className="text-lg font-semibold">Add New Category</CardTitle>
@@ -394,6 +396,16 @@ export function AddCategoryTab({ categories, onCategoryAdded }: AddCategoryTabPr
           </form>
         </CardContent>
       </Card>
+
+      {/* CSV Import */}
+      <CSVUpload
+        templateType="categories"
+        onImport={importCategories}
+        onSuccess={onCategoryAdded}
+        title="Import Categories from CSV"
+        description="Bulk import or update categories. Existing categories (by name) will be updated."
+      />
+      </div>
 
       {/* Right Column - Existing Categories */}
       <SearchableList
