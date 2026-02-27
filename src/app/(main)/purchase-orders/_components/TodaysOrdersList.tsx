@@ -160,7 +160,8 @@ export function TodaysOrdersList({
     }
 
     const headers = ["Item SKU Code", "Qty", "Unit Price", "Discount %", "Tax Class"]
-    const rows = purchaseOrders.map((order) => [
+    const sortedOrders = [...purchaseOrders].sort((a, b) => a.sku.localeCompare(b.sku))
+    const rows = sortedOrders.map((order) => [
       order.sku,
       order.quantity,
       order.cost_price,
@@ -262,7 +263,7 @@ export function TodaysOrdersList({
                 </tr>
               </thead>
               <tbody>
-                {purchaseOrders.map((order, idx) => {
+                {[...purchaseOrders].sort((a, b) => a.sku.localeCompare(b.sku)).map((order, idx) => {
                   const isEditing = editingId === order.id
 
                   if (isEditing) {
