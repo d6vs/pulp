@@ -27,11 +27,12 @@ export function AutocompleteInput({
   const wrapperRef = React.useRef<HTMLDivElement>(null)
 
   // Filter options based on input value (case-insensitive)
+  // Show all options when no value, filter when user types
   const filteredOptions = React.useMemo(() => {
-    if (!value) return []
+    if (!value) return options
     const searchValue = value.toLowerCase()
     return options.filter((option) =>
-      option.toLowerCase().startsWith(searchValue)
+      option.toLowerCase().includes(searchValue)
     )
   }, [value, options])
 
@@ -122,9 +123,9 @@ export function AutocompleteInput({
           ))}
         </div>
       )}
-      {isOpen && filteredOptions.length === 0 && value && (
+      {isOpen && filteredOptions.length === 0 && (
         <div className="absolute z-50 mt-1 w-full rounded-md border border-gray-200 bg-white p-3 shadow-lg">
-          <p className="text-sm text-gray-500">No results found</p>
+          <p className="text-sm text-gray-500">{value ? "No results found" : "No options available"}</p>
         </div>
       )}
     </div>
