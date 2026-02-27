@@ -10,7 +10,7 @@ export type CSVTemplate = {
 
 export const CSV_TEMPLATES: Record<string, CSVTemplate> = {
   prints: {
-    headers: ["official_print_name", "print_code", "color"],
+    headers: ["Print Name", "Print Code", "Color"],
     required: ["official_print_name", "print_code"],
     example: [
       ["Floral Garden", "FLG", "Blue"],
@@ -18,16 +18,21 @@ export const CSV_TEMPLATES: Record<string, CSVTemplate> = {
       ["Solid Color", "SOL", "Red"],
     ],
     description: "Import prints with name, code, and optional color",
+    headerMapping: {
+      "Print Name": "official_print_name",
+      "Print Code": "print_code",
+      "Color": "color",
+    },
   },
   categories: {
     headers: [
-      "category_name",
-      "category_code",
-      "sku_schema",
-      "hsn_code",
-      "size_in_product_name",
-      "product_name_prefix",
-      "category_type",
+      "Category Name",
+      "Category Code",
+      "SKU Schema",
+      "HSN Code",
+      "Size In Product Name",
+      "Product Name Prefix",
+      "Category Type",
     ],
     required: ["category_name", "category_code", "sku_schema"],
     example: [
@@ -36,6 +41,15 @@ export const CSV_TEMPLATES: Record<string, CSVTemplate> = {
     ],
     description:
       "Import categories. sku_schema: 1-5, size_in_product_name: true/false, category_type: individual/bundle",
+    headerMapping: {
+      "Category Name": "category_name",
+      "Category Code": "category_code",
+      "SKU Schema": "sku_schema",
+      "HSN Code": "hsn_code",
+      "Size In Product Name": "size_in_product_name",
+      "Product Name Prefix": "product_name_prefix",
+      "Category Type": "category_type",
+    },
   },
   sizes: {
     headers: ["size_name"],
@@ -45,22 +59,22 @@ export const CSV_TEMPLATES: Record<string, CSVTemplate> = {
   },
   products: {
     headers: [
-      "category",
-      "print",
-      "size",
-      "product_code",
-      "name",
-      "length_mm",
-      "width_mm",
-      "height_mm",
-      "isbn",
-      "color",
-      "brand",
-      "base_price",
-      "cost_price",
-      "mrp",
-      "hsn_code",
-      "material",
+      "Category",
+      "Print",
+      "Size",
+      "Product Code",
+      "Name",
+      "Length (mm)",
+      "Width (mm)",
+      "Height (mm)",
+      "ISBN",
+      "Color",
+      "Brand",
+      "Base Price",
+      "Cost Price",
+      "MRP",
+      "HSN Code",
+      "Material",
     ],
     required: ["category", "product_code", "name"],
     example: [
@@ -85,9 +99,27 @@ export const CSV_TEMPLATES: Record<string, CSVTemplate> = {
     ],
     description:
       "Import products. category, print, size must match existing records",
+    headerMapping: {
+      "Category": "category",
+      "Print": "print",
+      "Size": "size",
+      "Product Code": "product_code",
+      "Name": "name",
+      "Length (mm)": "length_mm",
+      "Width (mm)": "width_mm",
+      "Height (mm)": "height_mm",
+      "ISBN": "isbn",
+      "Color": "color",
+      "Brand": "brand",
+      "Base Price": "base_price",
+      "Cost Price": "cost_price",
+      "MRP": "mrp",
+      "HSN Code": "hsn_code",
+      "Material": "material",
+    },
   },
   product_weights: {
-    headers: ["category", "size", "weight"],
+    headers: ["Category", "Size", "Weight (gms)"],
     required: ["category", "size", "weight"],
     example: [
       ["Cotton Joggers", "9-12M", "68"],
@@ -96,6 +128,11 @@ export const CSV_TEMPLATES: Record<string, CSVTemplate> = {
     ],
     description:
       "Import product weights. category and size must match existing records. Weight in grams.",
+    headerMapping: {
+      "Category": "category",
+      "Size": "size",
+      "Weight (gms)": "weight",
+    },
   },
   bundles: {
     headers: [

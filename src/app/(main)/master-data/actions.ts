@@ -937,15 +937,15 @@ export async function importProducts(data: Record<string, unknown>[]): Promise<I
       // Find weight_id based on category_id + size_id
       let weight_id = null
       if (size_id) {
-        const { data: weight } = await supabaseAdmin
+        const { data: weightData } = await supabaseAdmin
           .from("product_weights")
           .select("id")
           .eq("category_id", category_id)
           .eq("size_id", size_id)
           .single()
 
-        if (weight) {
-          weight_id = weight.id
+        if (weightData) {
+          weight_id = weightData.id
         }
       }
 
