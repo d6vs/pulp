@@ -35,7 +35,7 @@ export default function AuthLayout({
 
         {/* Footer */}
         <p className="mt-8 text-sm text-gray-400">
-          Pulp - Inventory Management
+          Pulp - Concept to Commerce
         </p>
       </div>
     </div>

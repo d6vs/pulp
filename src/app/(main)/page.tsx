@@ -35,7 +35,7 @@ export default function Home() {
       <div className="max-w-4xl w-full space-y-8">
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold text-gray-900">Pulp</h1>
-          <p className="text-gray-500">Inventory management and reporting system</p>
+          <p className="text-gray-500">Concept to Commerce and reporting system</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
