@@ -20,6 +20,7 @@ interface ItemDetailsFormProps {
 export function ItemDetailsForm({ categories, onItemsAdded }: ItemDetailsFormProps) {
   const [prints, setPrints] = useState<Print[]>([])
   const [sizes, setSizes] = useState<Size[]>([])
+  const [sizeToProductCode, setSizeToProductCode] = useState<Record<string, string>>({})
 
   const [categoryInput, setCategoryInput] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
@@ -36,6 +37,7 @@ export function ItemDetailsForm({ categories, onItemsAdded }: ItemDetailsFormPro
     setSelectedSizes([])
     setPrints([])
     setSizes([])
+    setSizeToProductCode({})
 
     if (category) {
       const printsResult = await getPrintsByCategory(category.id)
@@ -47,11 +49,13 @@ export function ItemDetailsForm({ categories, onItemsAdded }: ItemDetailsFormPro
     setSelectedPrint(print)
     setSelectedSizes([])
     setSizes([])
+    setSizeToProductCode({})
 
     if (selectedCategory && print) {
       setIsLoadingSizes(true)
       const sizesResult = await getSizesByCategoryAndPrint(selectedCategory.id, print.id)
       if (sizesResult.data) setSizes(sizesResult.data)
+      if (sizesResult.sizeToProductCode) setSizeToProductCode(sizesResult.sizeToProductCode)
       setIsLoadingSizes(false)
     }
   }
@@ -247,6 +251,7 @@ export function ItemDetailsForm({ categories, onItemsAdded }: ItemDetailsFormPro
         selectedCategory={selectedCategory}
         selectedPrint={selectedPrint}
         selectedSizes={selectedSizes}
+        sizeToProductCode={sizeToProductCode}
       />
     </div>
   )

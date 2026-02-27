@@ -112,8 +112,9 @@ export function BundleItemMasterTable({
       return
     }
 
-    // Prepare data for export
-    const exportData = bundleItemMasterData.map((item) => ({
+    // Sort by product_code and prepare data for export
+    const sortedData = [...bundleItemMasterData].sort((a, b) => (a.product_code || "").localeCompare(b.product_code || ""))
+    const exportData = sortedData.map((item) => ({
       "Category Code": item.category_code || "",
       "Product Code": item.product_code || "",
       "Name": item.name || "",
@@ -292,7 +293,7 @@ export function BundleItemMasterTable({
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {bundleItemMasterData.map((item) => (
+                {[...bundleItemMasterData].sort((a, b) => (a.product_code || "").localeCompare(b.product_code || "")).map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50">
                     <td className="px-3 py-2 text-xs text-gray-700">{item.category_code || ""}</td>
                     <td className="px-3 py-2 text-xs font-mono text-gray-900">{item.product_code || ""}</td>

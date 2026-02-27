@@ -39,7 +39,8 @@ export function ItemMasterTable({ itemMasterData, selectedDate, onDataChanged }:
       return
     }
 
-    const rows = itemMasterData.map((item) =>
+    const sortedData = [...itemMasterData].sort((a, b) => (a.product_code || "").localeCompare(b.product_code || ""))
+    const rows = sortedData.map((item) =>
       ITEM_MASTER_COLUMNS.map((col) => item[col] ?? "")
     )
 
@@ -159,7 +160,7 @@ export function ItemMasterTable({ itemMasterData, selectedDate, onDataChanged }:
                 </tr>
               </thead>
               <tbody>
-                {itemMasterData.map((item, rowIdx) => (
+                {[...itemMasterData].sort((a, b) => (a.product_code || "").localeCompare(b.product_code || "")).map((item, rowIdx) => (
                   <tr key={item.id || rowIdx} className="border-b hover:bg-gray-50">
                     <td className="px-3 py-2 text-gray-500">{rowIdx + 1}</td>
                     {ITEM_MASTER_COLUMNS.map((col, colIdx) => (

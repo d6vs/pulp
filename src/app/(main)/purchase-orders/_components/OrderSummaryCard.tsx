@@ -46,9 +46,9 @@ export function OrderSummaryCard({
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Order Items */}
+            {/* Order Items - sorted by SKU */}
             <div className="space-y-2 max-h-[400px] overflow-y-auto">
-              {sizeQuantities.map((sizeQty) => (
+              {[...sizeQuantities].sort((a, b) => (a.sku || "").localeCompare(b.sku || "")).map((sizeQty) => (
                   <div
                     key={sizeQty.size}
                     className="bg-gray-50 rounded-lg p-3 border border-gray-200 space-y-3"

@@ -8,9 +8,10 @@ interface SelectionPreviewProps {
   selectedCategory: Category | null
   selectedPrint: Print | null
   selectedSizes: Size[]
+  sizeToProductCode?: Record<string, string>
 }
 
-export function SelectionPreview({ selectedCategory, selectedPrint, selectedSizes }: SelectionPreviewProps) {
+export function SelectionPreview({ selectedCategory, selectedPrint, selectedSizes, sizeToProductCode = {} }: SelectionPreviewProps) {
   const isEmpty = !selectedCategory && !selectedPrint && selectedSizes.length === 0
 
   return (
@@ -69,7 +70,9 @@ export function SelectionPreview({ selectedCategory, selectedPrint, selectedSize
                   Sizes ({selectedSizes.length})
                 </p>
                 <div className="flex flex-wrap gap-1.5 mt-2">
-                  {selectedSizes.map((size) => (
+                  {[...selectedSizes]
+                    .sort((a, b) => (sizeToProductCode[a.size_name] || "").localeCompare(sizeToProductCode[b.size_name] || ""))
+                    .map((size) => (
                     <span
                       key={size.id}
                       className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded font-medium"
