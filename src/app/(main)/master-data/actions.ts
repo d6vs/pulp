@@ -563,6 +563,24 @@ export async function deleteBundleReference(id: string) {
   }
 }
 
+export async function deleteBundleReferences(ids: string[]) {
+  try {
+    const { error } = await supabaseAdmin
+      .from("bundle_reference")
+      .delete()
+      .in("id", ids)
+
+    if (error) {
+      console.error("Error deleting bundle references:", error)
+      return { error: error.message, deletedCount: 0 }
+    }
+    return { error: null, deletedCount: ids.length }
+  } catch (error) {
+    console.error("Unexpected error:", error)
+    return { error: "Unable to delete bundle references. Please try again.", deletedCount: 0 }
+  }
+}
+
 // ============================================
 // PRODUCT WEIGHTS
 // ============================================
