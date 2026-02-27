@@ -11,6 +11,8 @@ import { UpdateWeightTab } from "./_components/UpdateWeightTab"
 import { AddProductTab } from "./_components/AddProductTab"
 import { ExistingProductsList } from "./_components/ExistingProductsList"
 import { ExistingBundlesList } from "./_components/ExistingBundlesList"
+import { CSVUpload } from "@/components/ui/csv-upload"
+import { importBundles } from "./actions"
 
 type TabType = "print" | "category" | "size" | "weight" | "product" | "bundle"
 
@@ -97,7 +99,14 @@ export default function ProductSetupPage() {
           )}
 
           {activeTab === "bundle" && (
-            <div className="lg:col-span-2">
+            <div className="lg:col-span-2 space-y-6">
+              <CSVUpload
+                templateType="bundles"
+                onImport={importBundles}
+                onSuccess={refetchBundleReferences}
+                title="Import Bundles from CSV"
+                description="Bulk import bundle references. Each row is one component. Multiple rows with same product_code form one bundle."
+              />
               <ExistingBundlesList bundles={bundleReferences} onDeleted={refetchBundleReferences} />
             </div>
           )}

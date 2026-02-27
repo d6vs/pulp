@@ -1132,3 +1132,123 @@ export async function importProductWeights(data: Record<string, unknown>[]): Pro
   return { successCount, errorCount: errors.length, skippedCount: skipped.length, errors, skipped }
 }
 
+export async function importBundles(data: Record<string, unknown>[]): Promise<ImportResult> {
+  const errors: ImportError[] = []
+  const skipped: ImportSkipped[] = []
+  let successCount = 0
+
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i]
+    const rowNum = i + 2
+
+    try {
+      const productCode = String(row.product_code || "")
+      const componentProductCode = String(row.component_product_code || "")
+      const componentQuantity = Number(row.component_quantity) || 1
+
+      if (!productCode) {
+        errors.push({ row: rowNum, field: "product_code", message: "Bundle product_code is required" })
+        continue
+      }
+
+      if (!componentProductCode) {
+        errors.push({ row: rowNum, field: "component_product_code", message: "Component product_code is required" })
+        continue
+      }
+
+      const bundleData = {
+        category_code: row.category_code ? String(row.category_code) : null,
+        product_code: productCode,
+        name: row.name ? String(row.name) : null,
+        size: row.size ? String(row.size) : null,
+        length_mm: row.length_mm ? Number(row.length_mm) : null,
+        width_mm: row.width_mm ? Number(row.width_mm) : null,
+        height_mm: row.height_mm ? Number(row.height_mm) : null,
+        weight_gms: row.weight_gms ? Number(row.weight_gms) : null,
+        isbn: row.isbn ? String(row.isbn) : null,
+        color: row.color ? String(row.color) : null,
+        brand: row.brand ? String(row.brand) : null,
+        base_price: row.base_price ? Number(row.base_price) : null,
+        cost_price: row.cost_price ? Number(row.cost_price) : null,
+        mrp: row.mrp ? Number(row.mrp) : null,
+        hsn_code: row.hsn_code ? String(row.hsn_code) : null,
+        material: row.material ? String(row.material) : null,
+        enabled: row.enabled === true || row.enabled === "true" || row.enabled === null ? true : false,
+        type: row.type ? String(row.type) : "BUNDLE",
+        tax_calculation_type: row.tax_calculation_type ? String(row.tax_calculation_type) : "PRICE_OF_BUNDLE_SKU",
+        component_product_code: componentProductCode,
+        internal_style_name: row.internal_style_name ? String(row.internal_style_name) : null,
+        component_quantity: componentQuantity,
+        component_price: row.component_price ? Number(row.component_price) : null,
+      }
+
+      // Check if this exact bundle component row already exists
+      const { data: existing } = await supabaseAdmin
+        .from("bundle_reference")
+        .select("*")
+        .eq("product_code", productCode)
+        .eq("component_product_code", componentProductCode)
+        .maybeSingle()
+
+      if (existing) {
+        // Check if values are the same
+        const isSame =
+          existing.category_code === bundleData.category_code &&
+          existing.name === bundleData.name &&
+          existing.size === bundleData.size &&
+          existing.length_mm === bundleData.length_mm &&
+          existing.width_mm === bundleData.width_mm &&
+          existing.height_mm === bundleData.height_mm &&
+          existing.weight_gms === bundleData.weight_gms &&
+          existing.isbn === bundleData.isbn &&
+          existing.color === bundleData.color &&
+          existing.brand === bundleData.brand &&
+          existing.base_price === bundleData.base_price &&
+          existing.cost_price === bundleData.cost_price &&
+          existing.mrp === bundleData.mrp &&
+          existing.hsn_code === bundleData.hsn_code &&
+          existing.material === bundleData.material &&
+          existing.internal_style_name === bundleData.internal_style_name &&
+          existing.component_quantity === bundleData.component_quantity &&
+          existing.component_price === bundleData.component_price
+
+        if (isSame) {
+          skipped.push({
+            row: rowNum,
+            name: `${productCode} → ${componentProductCode}`,
+            reason: "No changes detected",
+          })
+          continue
+        }
+
+        // Update existing bundle component
+        const { error } = await supabaseAdmin
+          .from("bundle_reference")
+          .update(bundleData)
+          .eq("id", existing.id)
+
+        if (error) {
+          errors.push({ row: rowNum, field: "", message: error.message })
+        } else {
+          successCount++
+        }
+      } else {
+        // Insert new bundle component
+        const { error } = await supabaseAdmin
+          .from("bundle_reference")
+          .insert([bundleData])
+
+        if (error) {
+          errors.push({ row: rowNum, field: "", message: error.message })
+        } else {
+          successCount++
+        }
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error"
+      errors.push({ row: rowNum, field: "", message })
+    }
+  }
+
+  return { successCount, errorCount: errors.length, skippedCount: skipped.length, errors, skipped }
+}

@@ -5,6 +5,7 @@ export type CSVTemplate = {
   required: string[]
   example: (string | number | boolean)[][]
   description: string
+  headerMapping?: Record<string, string>
 }
 
 export const CSV_TEMPLATES: Record<string, CSVTemplate> = {
@@ -96,6 +97,66 @@ export const CSV_TEMPLATES: Record<string, CSVTemplate> = {
     description:
       "Import product weights. category and size must match existing records. Weight in grams.",
   },
+  bundles: {
+    headers: [
+      "Category Code",
+      "Product Code",
+      "Name",
+      "Size",
+      "Length (mm)",
+      "Width (mm)",
+      "Height (mm)",
+      "Weight (gms)",
+      "ISBN",
+      "Color",
+      "Brand",
+      "Base Price",
+      "Cost Price",
+      "MRP",
+      "HSN Code",
+      "Material",
+      "Enabled",
+      "Type",
+      "Tax Calculation Type",
+      "Component Product Code",
+      "Style",
+      "Component Quantity",
+      "Component Price",
+    ],
+    required: ["product_code", "component_product_code", "component_quantity"],
+    example: [
+      ["12_BIB", "12_BIB_MS_OH", "12 Pack BIB | Mauve, Orange", "OS", "300", "200", "50", "450", "", "", "Orange Sugar", "2700", "1350", "2700", "6111", "Cotton", "true", "BUNDLE", "PRICE_OF_BUNDLE_SKU", "BIB_MS", "Mauve Shadows", "1", "225"],
+      ["12_BIB", "12_BIB_MS_OH", "12 Pack BIB | Mauve, Orange", "OS", "300", "200", "50", "450", "", "", "Orange Sugar", "2700", "1350", "2700", "6111", "Cotton", "true", "BUNDLE", "PRICE_OF_BUNDLE_SKU", "BIB_OH", "Orange Heaven", "1", "225"],
+    ],
+    description:
+      "Import bundle references. Each row is one component. Multiple rows with same product_code form one bundle.",
+    // Header to database column mapping
+    headerMapping: {
+      "Category Code": "category_code",
+      "Product Code": "product_code",
+      "Name": "name",
+      "Size": "size",
+      "Length (mm)": "length_mm",
+      "Width (mm)": "width_mm",
+      "Height (mm)": "height_mm",
+      "Weight (gms)": "weight_gms",
+      "ISBN": "isbn",
+      "Color": "color",
+      "Brand": "brand",
+      "Base Price": "base_price",
+      "Cost Price": "cost_price",
+      "MRP": "mrp",
+      "HSN Code": "hsn_code",
+      "Material": "material",
+      "Enabled": "enabled",
+      "Type": "type",
+      "Tax Calculation Type": "tax_calculation_type",
+      "Component Product Code": "component_product_code",
+      "Style": "internal_style_name",
+      "Component Quantity": "component_quantity",
+      "Component Price": "component_price",
+    },
+  },
 }
 
 export type TemplateType = keyof typeof CSV_TEMPLATES
@@ -133,6 +194,9 @@ export function parseCSVValue(value: string, header: string): string | number | 
     "length_mm",
     "width_mm",
     "height_mm",
+    "weight_gms",
+    "component_quantity",
+    "component_price",
   ]
   if (numberFields.includes(header)) {
     const num = parseFloat(trimmed)
@@ -194,6 +258,7 @@ export function parseCSV(
 
   const data: Record<string, unknown>[] = []
   const errors: { row: number; field: string; message: string }[] = []
+  const headerMapping = template.headerMapping || {}
 
   // Parse data rows
   for (let i = 1; i < lines.length; i++) {
@@ -201,7 +266,9 @@ export function parseCSV(
     const row: Record<string, unknown> = {}
 
     headers.forEach((header, idx) => {
-      row[header] = parseCSVValue(values[idx] || "", header)
+      // Map friendly header to database column name if mapping exists
+      const dbColumn = headerMapping[header] || header
+      row[dbColumn] = parseCSVValue(values[idx] || "", dbColumn)
     })
 
     const validation = validateRow(row, template, i)
