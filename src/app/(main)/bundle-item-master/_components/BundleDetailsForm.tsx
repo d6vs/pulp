@@ -16,7 +16,7 @@ import {
 import { Plus, Loader2, X, ChevronDown, ChevronUp, Minus } from "lucide-react"
 import { toast } from "sonner"
 import { addBundlesToItemMasterFromReference, checkBundleExistsInReference, generateBundleItemMaster, BundleReferenceData } from "../actions"
-import { getPrintsByCategory, getSizesByCategoryAndPrint } from "@/app/(main)/purchase-orders/actions"
+import { getPrintsByCategory, getSizesByCategoryAndPrint } from "@/lib/actions/products"
 import type { Category, Print, Size } from "@/types/common"
 
 type BundleProduct = {
@@ -27,6 +27,7 @@ type BundleProduct = {
   printInput: string
   prints: Print[]
   sizes: Size[]
+  sizeToProductCode: Record<string, string>  // size_name → product_code
   quantity: number
   isLoadingPrints: boolean
   isLoadingSizes: boolean
@@ -126,13 +127,6 @@ export function BundleDetailsForm({
 
     setIsCheckingReference(true)
     try {
-      const individualProducts = productsWithPrints.map((p) => ({
-        categoryName: p.category!.category_name,
-        categoryCode: p.category!.category_code || "",
-        printName: p.print!.official_print_name,
-        printCode: p.print!.print_code || "",
-      }))
-
       const sizeNames = finalSizesOptions.map((s) => s.size_name)
 
       if (sizeNames.length === 0) {
@@ -142,10 +136,24 @@ export function BundleDetailsForm({
         return
       }
 
+      // Build sizeToProductCodes map from all products' sizeToProductCode
+      // Structure: { "12-18M": ["HAB_T_S_12-18M", "JS_T_S_12-18M"], ... }
+      const sizeToProductCodes: Record<string, string[]> = {}
+      for (const sizeName of sizeNames) {
+        const productCodes: string[] = []
+        for (const product of productsWithPrints) {
+          const productCode = product.sizeToProductCode[sizeName]
+          if (productCode) {
+            productCodes.push(productCode)
+          }
+        }
+        sizeToProductCodes[sizeName] = productCodes
+      }
+
       const result = await checkBundleExistsInReference(
         selectedBundleCategory.category_name,
-        individualProducts,
-        sizeNames
+        sizeToProductCodes,
+        productsWithPrints.length
       )
 
       setHasCheckedReference(true)
@@ -209,6 +217,7 @@ export function BundleDetailsForm({
       printInput: "",
       prints: [],
       sizes: [],
+      sizeToProductCode: {},
       quantity: 1,
       isLoadingPrints: false,
       isLoadingSizes: false,
@@ -257,6 +266,7 @@ export function BundleDetailsForm({
       print,
       printInput: print?.official_print_name || "",
       sizes: [],
+      sizeToProductCode: {},
       isLoadingSizes: true,
     })
     setSelectedFinalSizes([])
@@ -265,6 +275,7 @@ export function BundleDetailsForm({
       const sizesResult = await getSizesByCategoryAndPrint(category.id, print.id)
       updateBundleProduct(productId, {
         sizes: sizesResult.data || [],
+        sizeToProductCode: sizesResult.sizeToProductCode || {},
         isLoadingSizes: false,
       })
     } else {
@@ -323,17 +334,23 @@ export function BundleDetailsForm({
       const selectedSizeNames = selectedFinalSizes.map((s) => s.size_name)
 
       // Check which bundles exist in reference
-      const checkProducts = productsWithPrints.map((p) => ({
-        categoryName: p.category!.category_name,
-        categoryCode: p.category!.category_code || "",
-        printName: p.print!.official_print_name,
-        printCode: p.print!.print_code || "",
-      }))
+      // Build sizeToProductCodes map from all products' sizeToProductCode
+      const sizeToProductCodes: Record<string, string[]> = {}
+      for (const sizeName of selectedSizeNames) {
+        const productCodes: string[] = []
+        for (const product of productsWithPrints) {
+          const productCode = product.sizeToProductCode[sizeName]
+          if (productCode) {
+            productCodes.push(productCode)
+          }
+        }
+        sizeToProductCodes[sizeName] = productCodes
+      }
 
       const checkResult = await checkBundleExistsInReference(
         selectedBundleCategory.category_name,
-        checkProducts,
-        selectedSizeNames
+        sizeToProductCodes,
+        productsWithPrints.length
       )
 
       let totalAdded = 0

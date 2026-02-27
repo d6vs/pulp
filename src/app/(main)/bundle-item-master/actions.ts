@@ -244,30 +244,35 @@ export async function generateBundleItemMaster(
         componentProducts.push({ sku: indSKU, mrp: productMRP, printName: indProduct.printName, productData: foundProductData, quantity: indProduct.quantity || 1 })
       }
 
-      // --- Find existing bundle SKU in reference (order-independent) ---
-      // Check if a bundle with ALL these print codes already exists in bundle_reference
+      // --- Find existing bundle SKU in reference by component_product_code ---
+      // We already have componentProducts with their SKUs, use those to find matching bundle
       let bundleSKU: string | null = null
 
-      let existingQuery = supabaseAdmin
+      const componentSkus = componentProducts.map((c) => c.sku)
+
+      // Query bundle_reference for entries matching these component codes
+      const { data: existingEntries } = await supabaseAdmin
         .from("bundle_reference")
-        .select("product_code")
+        .select("product_code, component_product_code")
         .eq("category_code", bundleCategoryCode)
         .eq("size", sizeName)
-
-      for (const code of uniquePrintCodes) {
-        existingQuery = existingQuery.ilike("product_code", `%${code}%`)
-      }
-
-      const { data: existingEntries } = await existingQuery
+        .in("component_product_code", componentSkus)
 
       if (existingEntries && existingEntries.length > 0) {
-        // Group by product_code and find one where component count matches
-        const countMap = new Map<string, number>()
+        // Group by product_code (bundle SKU)
+        const productCodeGroups = new Map<string, Set<string>>()
         for (const e of existingEntries) {
-          countMap.set(e.product_code, (countMap.get(e.product_code) || 0) + 1)
+          const existing = productCodeGroups.get(e.product_code) || new Set()
+          if (e.component_product_code) {
+            existing.add(e.component_product_code)
+          }
+          productCodeGroups.set(e.product_code, existing)
         }
-        for (const [code, count] of countMap) {
-          if (count === individualProducts.length) {
+
+        // Find bundle where ALL component codes are present
+        for (const [code, componentSet] of productCodeGroups) {
+          const hasAllComponents = componentSkus.every((sku) => componentSet.has(sku))
+          if (hasAllComponents && componentSet.size === componentProducts.length) {
             bundleSKU = code
             break
           }
@@ -603,100 +608,130 @@ export type BundleReferenceData = {
 
 // ============================================
 // ACTION 4: Check if Bundle Exists in Reference
-// Simple logic: Filter by category + size, then check if product_code contains all print codes
-// Returns full reference data so we can use it directly without regenerating SKUs
+// SUPER OPTIMIZED: Only 1-2 queries!
+// - Accepts product codes directly from UI (no products table query needed)
+// - Single bundle_reference query for all sizes
 // ============================================
 export async function checkBundleExistsInReference(
   bundleCategoryName: string,
-  individualProducts: {
-    categoryName: string
-    categoryCode: string
-    printName: string
-    printCode: string
-    quantity?: number
-  }[],
-  sizeNames: string[]
+  sizeToProductCodes: Record<string, string[]>, // size_name → [product_codes]
+  totalProductsSelected: number
 ) {
   try {
-    // Get unique print codes from user's selection (for ILIKE filters)
-    const uniquePrints = new Map<string, string>()
-    for (const product of individualProducts) {
-      if (!uniquePrints.has(product.printCode)) {
-        uniquePrints.set(product.printCode, product.printName)
-      }
-    }
-    const uniquePrintCodes = [...uniquePrints.keys()]
-    const uniquePrintNames = [...uniquePrints.values()]
+    const sizeNames = Object.keys(sizeToProductCodes)
+    const allProductCodes = [...new Set(Object.values(sizeToProductCodes).flat())]
 
-    // Number of products selected (for component count comparison)
-    // This handles cases like "Sweatshirt & Joggers" where both use same print
-    // Note: We compare row count, not sum of quantities
-    const totalProductsSelected = individualProducts.length
-
-    console.log("=== Bundle Reference Check ===")
+    console.log("=== Bundle Reference Check (Super Optimized) ===")
     console.log("Bundle Category Name:", bundleCategoryName)
-    console.log("Unique Print Codes:", uniquePrintCodes)
     console.log("Total Products Selected:", totalProductsSelected)
     console.log("Size Names:", sizeNames)
+    console.log("All Product Codes:", allProductCodes)
 
+    if (allProductCodes.length === 0) {
+      return {
+        exists: false,
+        existingBundles: [],
+        missingBundles: sizeNames.map((s) => `${bundleCategoryName} | ${s}`),
+        error: null,
+      }
+    }
+
+    // ========== STEP 1: Single query to bundle_reference for ALL sizes ==========
+    const { data: bundleEntries } = await supabaseAdmin
+      .from("bundle_reference")
+      .select("product_code, component_product_code, size")
+      .eq("category_code", bundleCategoryName)
+      .in("size", sizeNames)
+      .in("component_product_code", allProductCodes)
+      
+    console.log("Bundle Reference Entries Fetched:", bundleEntries)
+
+    // ========== STEP 2: Group by size and product_code ==========
+    // Structure: size -> product_code -> Set of component_codes
+    const sizeProductGroups = new Map<string, Map<string, Set<string>>>()
+
+    for (const entry of bundleEntries || []) {
+      if (!sizeProductGroups.has(entry.size)) {
+        sizeProductGroups.set(entry.size, new Map())
+      }
+      const productGroups = sizeProductGroups.get(entry.size)!
+      if (!productGroups.has(entry.product_code)) {
+        productGroups.set(entry.product_code, new Set())
+      }
+      if (entry.component_product_code) {
+        productGroups.get(entry.product_code)!.add(entry.component_product_code)
+      }
+    }
+
+    // ========== STEP 3: Find matching bundles for each size ==========
     const missingBundles: string[] = []
-    const existingBundles: BundleReferenceData[] = []
+    const matchingProductCodes: { productCode: string; sizeName: string }[] = []
 
     for (const sizeName of sizeNames) {
-      // Step 1: Build query with filters for category, size, AND all print codes
-      // Fetch ALL columns so we can use this data directly
-      let query = supabaseAdmin
-        .from("bundle_reference")
-        .select("*")
-        .eq("category_code", bundleCategoryName)
-        .eq("size", sizeName)
+      const componentCodes = sizeToProductCodes[sizeName] || []
 
-      // Add ILIKE filter for each print code
-      // This ensures product_code contains ALL user's print codes
-      for (const printCode of uniquePrintCodes) {
-        query = query.ilike("product_code", `%${printCode}%`)
-      }
-
-      const { data: bundleEntries } = await query
-
-      const bundleDisplay = `${bundleCategoryName} | ${uniquePrintNames.join(", ")} | ${sizeName}`
-
-      if (!bundleEntries || bundleEntries.length === 0) {
-        console.log(`✗ No bundle found with prints [${uniquePrintCodes.join(", ")}] for size ${sizeName}`)
-        missingBundles.push(bundleDisplay)
+      // Check if we have all component products
+      if (componentCodes.length !== totalProductsSelected) {
+        console.log(`✗ Missing component products for size ${sizeName}`)
+        missingBundles.push(`${bundleCategoryName} | ${sizeName}`)
         continue
       }
 
-      // Step 2: Group entries by product_code
-      const productCodeGroups = new Map<string, typeof bundleEntries>()
-      for (const entry of bundleEntries) {
-        const existing = productCodeGroups.get(entry.product_code) || []
-        existing.push(entry)
-        productCodeGroups.set(entry.product_code, existing)
+      // Check if bundle exists
+      const productGroups = sizeProductGroups.get(sizeName)
+      if (!productGroups) {
+        console.log(`✗ No bundle found for size ${sizeName}`)
+        missingBundles.push(`${bundleCategoryName} | ${sizeName}`)
+        continue
       }
 
-      // Step 3: Find bundle where component count matches total products selected
-      // (number of products, not sum of quantities)
-      let foundBundle: BundleReferenceData | null = null
-
-      for (const [productCode, components] of productCodeGroups) {
-        // Component count must match total products selected
-        if (components.length === totalProductsSelected) {
-          foundBundle = {
-            productCode,
-            sizeName,
-            components,
-          }
-          console.log(`✓ Found matching bundle: ${productCode}`)
+      // Find product_code with ALL components
+      let found = false
+      for (const [productCode, componentSet] of productGroups) {
+        const hasAll = componentCodes.every((c) => componentSet.has(c))
+        if (hasAll && componentSet.size === totalProductsSelected) {
+          matchingProductCodes.push({ productCode, sizeName })
+          console.log(`✓ Found matching bundle: ${productCode} for ${sizeName}`)
+          found = true
           break
         }
       }
 
-      if (foundBundle) {
-        existingBundles.push(foundBundle)
-      } else {
-        console.log(`✗ No exact match for prints [${uniquePrintCodes.join(", ")}] for size ${sizeName}`)
-        missingBundles.push(bundleDisplay)
+      if (!found) {
+        console.log(`✗ No exact match for size ${sizeName}`)
+        missingBundles.push(`${bundleCategoryName} | ${sizeName}`)
+      }
+    }
+
+    // ========== STEP 4: Fetch full data only for matched bundles (1 query) ==========
+    const existingBundles: BundleReferenceData[] = []
+
+    if (matchingProductCodes.length > 0) {
+      const uniqueProductCodes = [...new Set(matchingProductCodes.map((m) => m.productCode))]
+
+      const { data: fullBundleData } = await supabaseAdmin
+        .from("bundle_reference")
+        .select("*")
+        .in("product_code", uniqueProductCodes)
+        .in("size", sizeNames)
+
+      // Group full data by product_code + size
+      const fullDataMap = new Map<string, typeof fullBundleData>()
+      for (const entry of fullBundleData || []) {
+        const key = `${entry.product_code}_${entry.size}`
+        if (!fullDataMap.has(key)) {
+          fullDataMap.set(key, [])
+        }
+        fullDataMap.get(key)!.push(entry)
+      }
+
+      // Build result
+      for (const { productCode, sizeName } of matchingProductCodes) {
+        const key = `${productCode}_${sizeName}`
+        const components = fullDataMap.get(key)
+        if (components && components.length > 0) {
+          existingBundles.push({ productCode, sizeName, components })
+        }
       }
     }
 

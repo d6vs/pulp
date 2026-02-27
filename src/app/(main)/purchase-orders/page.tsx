@@ -9,7 +9,8 @@ import { TodaysOrdersList } from "./_components/TodaysOrdersList"
 import { toast } from "sonner"
 import type { Category, Print, SizeQuantity } from "@/types/purchase-orders"
 import { isBundleSchema } from "@/lib/sku-utils"
-import { createPurchaseOrder, getPrintsByCategory, getSizesByCategoryAndPrint, getProductSKU } from "./actions"
+import { createPurchaseOrder } from "./actions"
+import { getPrintsByCategory, getSizesByCategoryAndPrint, getProductSKU } from "@/lib/actions/products"
 
 export default function PurchaseOrdersPage() {
   const {

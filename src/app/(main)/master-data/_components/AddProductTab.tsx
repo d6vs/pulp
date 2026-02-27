@@ -11,7 +11,7 @@ import { Plus, Loader2 } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { createProduct } from "../actions"
 import { generateSKU } from "@/lib/sku-utils"
-import { getSizesByCategoryAndPrint } from "@/app/(main)/purchase-orders/actions"
+import { getSizesByCategoryAndPrint } from "@/lib/actions/products"
 import { generateItemMaster } from "@/app/(main)/item-master/actions"
 import type { Category, Print, Size } from "@/types/common"
 
