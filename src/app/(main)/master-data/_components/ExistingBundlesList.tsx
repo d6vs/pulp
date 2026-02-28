@@ -57,6 +57,7 @@ export function ExistingBundlesList({ bundles, onDeleted }: ExistingBundlesListP
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false)
 
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(searchQuery)
@@ -65,13 +66,14 @@ export function ExistingBundlesList({ bundles, onDeleted }: ExistingBundlesListP
     return () => clearTimeout(timer)
   }, [searchQuery])
 
-  useEffect(() => {
+  // Compute valid deletedIds - filter out IDs that no longer exist in bundles
+  const validDeletedIds = useMemo(() => {
     const bundleIds = new Set(bundles.map(b => b.id))
-    setDeletedIds(prev => prev.filter(id => bundleIds.has(id)))
-  }, [bundles])
+    return deletedIds.filter(id => bundleIds.has(id))
+  }, [bundles, deletedIds])
 
   const filtered = useMemo(() => {
-    const notDeleted = bundles.filter((b) => !deletedIds.includes(b.id))
+    const notDeleted = bundles.filter((b) => !validDeletedIds.includes(b.id))
     if (!debouncedQuery) return notDeleted
     const q = debouncedQuery.toLowerCase()
     return notDeleted.filter((b) =>
@@ -82,17 +84,23 @@ export function ExistingBundlesList({ bundles, onDeleted }: ExistingBundlesListP
       b.component_product_code?.toLowerCase().includes(q) ||
       b.internal_style_name?.toLowerCase().includes(q)
     )
-  }, [bundles, debouncedQuery, deletedIds])
+  }, [bundles, debouncedQuery, validDeletedIds])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const startIdx = (currentPage - 1) * PAGE_SIZE
   const paginated = filtered.slice(startIdx, startIdx + PAGE_SIZE)
   const confirmBundle = bundles.find((b) => b.id === confirmId)
-  const totalCount = bundles.length - deletedIds.length
+  const totalCount = bundles.length - validDeletedIds.length
 
-  useEffect(() => {
-    setSelectedIds(new Set())
-  }, [bundles])
+  // Compute valid selectedIds - only keep IDs that exist in filtered bundles
+  const validSelectedIds = useMemo(() => {
+    const filteredIds = new Set(filtered.map(b => b.id))
+    const valid = new Set<string>()
+    selectedIds.forEach(id => {
+      if (filteredIds.has(id)) valid.add(id)
+    })
+    return valid
+  }, [filtered, selectedIds])
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
@@ -107,7 +115,7 @@ export function ExistingBundlesList({ bundles, onDeleted }: ExistingBundlesListP
   }
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === paginated.length) {
+    if (validSelectedIds.size === paginated.length) {
       setSelectedIds(new Set())
     } else {
       setSelectedIds(new Set(paginated.map(b => b.id)))
@@ -115,7 +123,7 @@ export function ExistingBundlesList({ bundles, onDeleted }: ExistingBundlesListP
   }
 
   const handleBulkDelete = async () => {
-    const idsToDelete = Array.from(selectedIds)
+    const idsToDelete = Array.from(validSelectedIds)
     if (idsToDelete.length === 0) return
 
     setDeletedIds(prev => [...prev, ...idsToDelete])
@@ -159,8 +167,8 @@ export function ExistingBundlesList({ bundles, onDeleted }: ExistingBundlesListP
     }
   }
 
-  const isAllSelected = paginated.length > 0 && selectedIds.size === paginated.length
-  const isSomeSelected = selectedIds.size > 0 && selectedIds.size < paginated.length
+  const isAllSelected = paginated.length > 0 && validSelectedIds.size === paginated.length
+  const isSomeSelected = validSelectedIds.size > 0 && validSelectedIds.size < paginated.length
 
   return (
     <>
@@ -211,12 +219,12 @@ export function ExistingBundlesList({ bundles, onDeleted }: ExistingBundlesListP
               <div
                 className={cn(
                   "flex items-center justify-between px-6 py-3 bg-orange-50 border-b border-orange-100 transition-all duration-200",
-                  selectedIds.size > 0 ? "opacity-100" : "opacity-0 h-0 py-0 overflow-hidden"
+                  validSelectedIds.size > 0 ? "opacity-100" : "opacity-0 h-0 py-0 overflow-hidden"
                 )}
               >
                 <div className="flex items-center gap-3">
                   <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-100">
-                    {selectedIds.size} selected
+                    {validSelectedIds.size} selected
                   </Badge>
                   <button
                     onClick={() => setSelectedIds(new Set())}
@@ -270,7 +278,7 @@ export function ExistingBundlesList({ bundles, onDeleted }: ExistingBundlesListP
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {paginated.map((b, i) => {
-                      const isSelected = selectedIds.has(b.id)
+                      const isSelected = validSelectedIds.has(b.id)
                       return (
                         <tr
                           key={b.id}
@@ -474,11 +482,11 @@ export function ExistingBundlesList({ bundles, onDeleted }: ExistingBundlesListP
             <div className="mx-auto w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
               <AlertTriangle className="h-6 w-6 text-red-600" />
             </div>
-            <AlertDialogTitle className="text-center">Delete {selectedIds.size} Components</AlertDialogTitle>
+            <AlertDialogTitle className="text-center">Delete {validSelectedIds.size} Components</AlertDialogTitle>
             <AlertDialogDescription className="text-center">
               Are you sure you want to delete{" "}
-              <span className="font-semibold text-gray-900">{selectedIds.size}</span> selected
-              bundle component{selectedIds.size !== 1 ? "s" : ""}? This action cannot be undone.
+              <span className="font-semibold text-gray-900">{validSelectedIds.size}</span> selected
+              bundle component{validSelectedIds.size !== 1 ? "s" : ""}? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="sm:justify-center gap-2">
